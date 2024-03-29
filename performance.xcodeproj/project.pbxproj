@@ -1,0 +1,82 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 56;
+	objects = {
+
+/* Begin PBXFileReference section */
+		9C41DF6C2AF8BAE200C8E681 /* sim86_shared_debug.pdb */ = {isa = PBXFileReference; lastKnownFileType = file; name = sim86_shared_debug.pdb; path = shared/sim86_shared_debug.pdb; sourceTree = "<group>"; };
+		9C41DF6E2AF8BAE200C8E681 /* sim86_shared.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; name = sim86_shared.h; path = shared/sim86_shared.h; sourceTree = "<group>"; };
+		9C41DF6F2AF8BDE700C8E681 /* sim86_shared_debug.dll */ = {isa = PBXFileReference; lastKnownFileType = file; name = sim86_shared_debug.dll; path = shared/sim86_shared_debug.dll; sourceTree = "<group>"; };
+		9C41DF702AF8BDE700C8E681 /* sim86_shared_debug.lib */ = {isa = PBXFileReference; lastKnownFileType = archive.ar; name = sim86_shared_debug.lib; path = shared/sim86_shared_debug.lib; sourceTree = "<group>"; };
+		9C41DF712AF8BDE700C8E681 /* cpp_shared_library_test.cpp */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.cpp.cpp; name = cpp_shared_library_test.cpp; path = shared/cpp_shared_library_test.cpp; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXGroup section */
+		9C41DF642AF8BAA600C8E681 = {
+			isa = PBXGroup;
+			children = (
+				9C41DF712AF8BDE700C8E681 /* cpp_shared_library_test.cpp */,
+				9C41DF6F2AF8BDE700C8E681 /* sim86_shared_debug.dll */,
+				9C41DF702AF8BDE700C8E681 /* sim86_shared_debug.lib */,
+				9C41DF6C2AF8BAE200C8E681 /* sim86_shared_debug.pdb */,
+				9C41DF6E2AF8BAE200C8E681 /* sim86_shared.h */,
+			);
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXProject section */
+		9C41DF652AF8BAA600C8E681 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = 1;
+				LastUpgradeCheck = 1500;
+			};
+			buildConfigurationList = 9C41DF682AF8BAA600C8E681 /* Build configuration list for PBXProject "performance" */;
+			compatibilityVersion = "Xcode 14.0";
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				en,
+				Base,
+			);
+			mainGroup = 9C41DF642AF8BAA600C8E681;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+			);
+		};
+/* End PBXProject section */
+
+/* Begin XCBuildConfiguration section */
+		9C41DF692AF8BAA600C8E681 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Debug;
+		};
+		9C41DF6A2AF8BAA600C8E681 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+			};
+			name = Release;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		9C41DF682AF8BAA600C8E681 /* Build configuration list for PBXProject "performance" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				9C41DF692AF8BAA600C8E681 /* Debug */,
+				9C41DF6A2AF8BAA600C8E681 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
+/* End XCConfigurationList section */
+	};
+	rootObject = 9C41DF652AF8BAA600C8E681 /* Project object */;
+}
