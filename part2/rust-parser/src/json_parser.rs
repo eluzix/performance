@@ -1,5 +1,9 @@
 use std::error::Error;
-use std::io::Read;
+use std::fs::File;
+use std::io::{BufReader, Read};
+use std::mem;
+
+use crate::listing_0065_haversine_formula::reference_haversine;
 
 type JsonValue = f64;
 
@@ -89,7 +93,7 @@ impl ParsingData {
     }
 
     fn update_obj(&mut self) {
-        if self.key.len() == 0 || self.val.len() == 0{
+        if self.key.len() == 0 || self.val.len() == 0 {
             return;
         }
 
@@ -100,7 +104,10 @@ impl ParsingData {
     }
 }
 
-pub fn parse<R: Read>(mut reader: R) -> Result<(), Box<dyn Error>> {
+pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
+    let f = File::open(input_file)?;
+    let mut reader = BufReader::new(f);
+
     const BUFFER_SIZE: usize = 1024;
     let mut buffer = [0_u8; BUFFER_SIZE];
     let mut json_array = JsonArray { objects: Vec::new() };
@@ -150,6 +157,34 @@ pub fn parse<R: Read>(mut reader: R) -> Result<(), Box<dyn Error>> {
 
                 _ => {
                     parse_data.add_value(char);
+                }
+            }
+        }
+    }
+
+    // delete the last object in json_array.objects
+    json_array.objects.pop();
+
+    if validate {
+        let binary_file_name = format!("{}.bin", input_file);
+        let mut verify_file = File::open(binary_file_name)?;
+        let mut buffer = Vec::new();
+        verify_file.read_to_end(&mut buffer)?;
+        let chunk_size = mem::size_of::<f64>();
+        for (i, chunk) in buffer.chunks(chunk_size).enumerate() {
+            if i == json_array.objects.len() {
+                break;
+            }
+
+            if chunk.len() == chunk_size {
+                // Correctly slice each part of the chunk for individual f64 values
+                let distance_bytes: [u8; 8] = chunk[0..8].try_into()?;
+                let distance = f64::from_be_bytes(distance_bytes);
+
+                let obj = &json_array.objects[i];
+                let haversine_distance = reference_haversine(obj.x0, obj.y0, obj.x1, obj.y1);
+                if (distance - haversine_distance).abs() > 0.0000001 {
+                    println!("Mismatch found in chunk {}: distance: {} vs haversine_distance: {}", i, distance, haversine_distance);
                 }
             }
         }

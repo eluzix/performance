@@ -7,7 +7,17 @@
     <cargoProject FILE="$PROJECT_DIR$/../part2/rust-parser/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="419335f9-b5ce-401c-b47b-b89bc56d9257" name="Changes" comment="json parser" />
+    <list default="true" id="419335f9-b5ce-401c-b47b-b89bc56d9257" name="Changes" comment="json parser">
+      <change afterPath="$PROJECT_DIR$/../part2/rust-parser/src/json_generator.rs" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/ruff.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../part2/haversine_data.bin" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../part2/haversine_data.json" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/json_parser.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/json_parser.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -49,6 +59,7 @@
     "RunOnceActivity.ShowReadmeOnStart": "true",
     "RunOnceActivity.go.formatter.settings.were.checked": "true",
     "RunOnceActivity.go.migrated.go.modules.settings": "true",
+    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
     "WebServerToolWindowFactoryState": "false",
     "git-widget-placeholder": "main",
     "go.import.settings.migrated": "true",
@@ -143,6 +154,7 @@
       <workItem from="1710054789211" duration="2720000" />
       <workItem from="1711564008005" duration="62000" />
       <workItem from="1711626844260" duration="6740000" />
+      <workItem from="1711634608954" duration="17835000" />
     </task>
     <task id="LOCAL-00001" summary="json parser">
       <option name="closed" value="true" />
@@ -173,7 +185,7 @@
       <breakpoints>
         <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
           <url>file://$PROJECT_DIR$/../part2/rust-parser/src/json_parser.rs</url>
-          <line>96</line>
+          <line>100</line>
           <option name="timeStamp" value="4" />
         </line-breakpoint>
       </breakpoints>
