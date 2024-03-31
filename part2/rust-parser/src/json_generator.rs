@@ -1,6 +1,9 @@
 use std::io::Write;
+use std::ops::Range;
 use rand::distributions::{Distribution, Uniform};
 use rand::thread_rng;
+use rand::Rng;
+use rand::SeedableRng;
 
 use crate::listing_0065_haversine_formula::reference_haversine;
 
@@ -23,15 +26,36 @@ fn random_in_range(x0: (f64, f64), y0: (f64, f64), x1: (f64, f64), y1: (f64, f64
     (rand_x0, rand_y0, rand_x1, rand_y1)
 }
 
+fn point_for_range(start: f64, end: f64) -> (f64, f64){
+    let mut rng = thread_rng();
+    let point = rng.gen_range(start..=end);
+    // range starting from point till range end's
+    (point, rng.gen_range(point..=end))
+}
 
 pub fn generate_json(method: &str, count: usize, seed: u64, output_file: &str) -> Result<(), std::io::Error>{
-    let ranges;
+    let mut ranges;
+
+    // set the seed
+    rand::rngs::StdRng::seed_from_u64(seed);
 
     if method == "uniform" {
         ranges = vec![(-180.0, 180.0), (-90.0, 90.0), (-180.0, 180.0), (-90.0, 90.0)];
     } else {
-        println!("Generating data with count {} and method {:?}", count, method);
-        ranges = vec![(-180.0, 180.0), (-90.0, 90.0), (-10.0, 10.0), (-10.0, 10.0)];
+        let mut rng = thread_rng();
+        let num_clusters = rng.gen_range(3..=10);
+        println!("Generating data with {} clusters", num_clusters);
+        ranges = Vec::new();
+        for _ in 0..num_clusters {
+            let x0 = point_for_range(-180.0, 180.0);
+            let y0 = point_for_range(-90.0, 90.0);
+            let x1 = point_for_range(-180.0, 180.0);
+            let y1 = point_for_range(-90.0, 90.0);
+            ranges.push(x0);
+            ranges.push(x1);
+            ranges.push(y0);
+            ranges.push(y1);
+        }
     }
 
     // open file for write
@@ -61,10 +85,10 @@ pub fn generate_json(method: &str, count: usize, seed: u64, output_file: &str) -
     file.write(line.as_bytes())?;
     binary_file.write_all(&total.to_be_bytes())?;
 
-    println!("Total distance: {}", total);
     println!("Generated {} points", count);
     println!("Seed: {}", seed);
     println!("Method: {}", method);
+    println!("Total distance: {}", total);
 
     Ok(())
 }
