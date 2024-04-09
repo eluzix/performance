@@ -2,6 +2,8 @@ use std::error::Error;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::mem;
+use std::time::Duration;
+use cpu_time::ProcessTime;
 
 use crate::listing_0065_haversine_formula::reference_haversine;
 
@@ -63,6 +65,19 @@ struct ParsingData {
     val: String,
 }
 
+#[derive(Debug)]
+struct TimePoint {
+    time: Duration,
+    label: String,
+}
+
+impl TimePoint {
+    fn new(time: Duration, label: &str) -> Self {
+        TimePoint { time, label: label.to_string()}
+    }
+}
+
+
 impl ParsingData {
     fn new() -> Self {
         ParsingData {
@@ -105,8 +120,16 @@ impl ParsingData {
 }
 
 pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
+    let mut vec: Vec<TimePoint> = Vec::with_capacity(5);
+    let start = ProcessTime::try_now().expect("Getting process time failed");
+    vec.push(TimePoint::new(start.elapsed(), "start"));
+    // init a Duration vector with 5 places
+    // let mut cpu_time: Duration = start.try_elapsed().expect("Getting process time failed");;
+    // println!(" {:?}", cpu_time);
+
     let f = File::open(input_file)?;
     let mut reader = BufReader::new(f);
+
 
     const BUFFER_SIZE: usize = 1024;
     let mut buffer = [0_u8; BUFFER_SIZE];
@@ -115,6 +138,7 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
 
     let mut parse_data = ParsingData::new();
 
+    vec.push(TimePoint::new(start.elapsed(), "setup"));
     loop {
         let count = reader.read(&mut buffer)?;
         // if count == 0 || json_array.objects.len() > 10 {
@@ -164,6 +188,7 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
 
     // delete the last object in json_array.objects
     json_array.objects.pop();
+    vec.push(TimePoint::new(start.elapsed(), "parse"));
 
     if validate {
         let binary_file_name = format!("{}.bin", input_file);
@@ -188,11 +213,20 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
                 }
             }
         }
+        vec.push(TimePoint::new(start.elapsed(), "validate"));
     }
 
     // for obj in json_array.objects.iter() {
     //     println!("{:?}", obj);
     // }
+
+    let total_time = start.elapsed();
+    for i in 0..vec.len() - 1 {
+        let time = vec[i + 1].time - vec[i].time;
+        println!("{}: {:?}", vec[i+1].label, time);
+    }
+    println!("Total time: {:?}", total_time);
+    // println!("{:?}", vec);
     println!("Total objects: {}", json_array.objects.len());
 
     Ok(())
