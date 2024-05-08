@@ -32,13 +32,11 @@ fn high_resolution_clock() -> Duration {
 pub struct TimePoint {
     start_time: u64,
     total_time: u64,
-    // start_time: Duration,
-    // total_time: Duration,
     label: String,
     hit_count: u32,
     children_time: u64,
-    // children_time: Duration,
     parent_index: Option<usize>,
+    bytes_processed: u64,
 }
 
 impl TimePoint {
@@ -50,15 +48,16 @@ impl TimePoint {
             hit_count: 0,
             children_time: 0,
             parent_index: None,
+            bytes_processed: 0,
         }
     }
 
     // fn mark_span(&mut self) -> Duration {
-    fn mark_span(&mut self) -> u64 {
+    fn mark_span(&mut self, bytes_processed: u64) -> u64 {
         let time = high_resolution_time() - self.start_time;
-        // self.start_time = now;
         self.total_time += time;
         self.hit_count += 1;
+        self.bytes_processed += bytes_processed;
         time
     }
 
@@ -146,10 +145,10 @@ pub fn start_span(label: &str) -> usize {
 }
 
 #[cfg(feature = "profiler")]
-pub fn stop_span(index: usize) {
+pub fn stop_span(index: usize, bytes_processed: u64) {
     let profiler = unsafe { &mut NAIVE_PROFILER };
     if let Some(time_point) = profiler.time_points.get_mut(index) {
-        let elapsed = time_point.mark_span();
+        let elapsed = time_point.mark_span(bytes_processed);
         let label = &time_point.label.clone();
 
         if let Some(parent_index) = time_point.parent_index {
@@ -179,7 +178,7 @@ pub fn start_span(_: &str) -> usize {
 }
 
 #[cfg(not(feature = "profiler"))]
-pub fn stop_span(_: usize) {}
+pub fn stop_span(_: usize, bytes_processed: u64) {}
 
 pub fn report() {
     let profiler = unsafe { &mut NAIVE_PROFILER };
@@ -193,7 +192,14 @@ pub fn report() {
         let point_time = Duration::from_nanos((point_total_time * time_info.numer as u64 ) / time_info.denom as u64);
         // let percent = (point_total_time.as_secs_f64() / total_time.as_secs_f64()) * 100.0;
         let percent = (point_time.as_secs_f64() / total_time.as_secs_f64()) * 100.0;
-        println!("{}: {:?} ({} hits, {:.2}%)", point.label, point_total_time, point.hit_count, percent);
+        print!("{}: {:?} ({} hits, {:.2}%)", point.label, point_total_time, point.hit_count, percent);
+        if point.bytes_processed > 0 {
+            let mb_processed = point.bytes_processed as f64 / 1024.0 / 1024.0;
+            let gb_processed = mb_processed / 1024.0;
+            let gb_per_sec = gb_processed / point_time.as_secs_f64();
+            print!(" ({:.2} MB, {:.2} GB/s)", mb_processed, gb_processed);
+        }
+        println!();
         // println!("{}: {:?} {:?} ({} hits, {:.2}%)", point.label, point_time, point_total_time, point.hit_count, percent);
     }
     println!("Total time: {:?}", total_time);

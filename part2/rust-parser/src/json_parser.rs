@@ -27,16 +27,14 @@ struct JsonObject {
 
 impl JsonObject {
     fn reset(&mut self) {
-        let start = naive_profiler::start_span("reset");
         self.x0 = 0.0;
         self.y0 = 0.0;
         self.x1 = 0.0;
         self.y1 = 0.0;
-        naive_profiler::stop_span(start);
     }
 
     fn set_val(&mut self, key: &str, val: JsonValue) {
-        // let start = naive_profiler::start_span();
+        // let start = naive_profiler::start_span("set_val");
         match key {
             "x0" => self.x0 = val,
             "y0" => self.y0 = val,
@@ -44,7 +42,7 @@ impl JsonObject {
             "y1" => self.y1 = val,
             _ => {}
         }
-        // naive_profiler::stop_span(start, "set_val");
+        // naive_profiler::stop_span(start, 0);
     }
 
     fn clone(&self) -> Self {
@@ -115,12 +113,10 @@ impl ParsingData {
             return;
         }
 
-        let start = naive_profiler::start_span("update_obj");
         let val = self.val.parse::<f64>().unwrap_or_else(|_| panic!("Error: Could not parse '{}' into a f64.", self.val));
         self.obj.set_val(self.key.as_str(), val);
         self.key.clear();
         self.val.clear();
-        naive_profiler::stop_span(start);
     }
 }
 
@@ -145,20 +141,21 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
     let mut array_found = false;
 
     let mut parse_data = ParsingData::new();
-    naive_profiler::stop_span(init_start);
+    naive_profiler::stop_span(init_start, 0);
 
     let parse_start = naive_profiler::start_span("Parse");
     loop {
         let start = naive_profiler::start_span("Read");
         let count = reader.read(&mut buffer)?;
-        naive_profiler::stop_span(start);
+        naive_profiler::stop_span(start, count as u64);
         // if count == 0 || json_array.objects.len() > 10 {
         if count == 0 {
             break;
         }
 
-        let start = naive_profiler::start_span("Loop");
         let string_slice = std::str::from_utf8(&buffer[..count])?;
+
+        let start = naive_profiler::start_span("Loop");
         for char in string_slice.chars() {
             if !array_found {
                 if char == '[' {
@@ -196,19 +193,26 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
                 }
             }
         }
-        naive_profiler::stop_span(start);
+        naive_profiler::stop_span(start, count as u64);
     }
 
     // delete the last object in json_array.objects
     json_array.objects.pop();
-    naive_profiler::stop_span(parse_start);
+    naive_profiler::stop_span(parse_start, 0);
 
     if validate {
         let start_validate = naive_profiler::start_span("Validate");
+        let validate_start = naive_profiler::start_span("Validate Read");
         let binary_file_name = format!("{}.bin", input_file);
         let mut verify_file = File::open(binary_file_name)?;
         let mut buffer = Vec::new();
         verify_file.read_to_end(&mut buffer)?;
+
+        let buffer_size = buffer.len();
+        naive_profiler::stop_span(validate_start, buffer_size as u64);
+
+
+        let validate_start = naive_profiler::start_span("Validate parse");
         let chunk_size = mem::size_of::<f64>();
         for (i, chunk) in buffer.chunks(chunk_size).enumerate() {
             if i == json_array.objects.len() {
@@ -221,13 +225,16 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
                 let distance = f64::from_be_bytes(distance_bytes);
 
                 let obj = &json_array.objects[i];
+                let haversine_start = naive_profiler::start_span("Haversine");
                 let haversine_distance = reference_haversine(obj.x0, obj.y0, obj.x1, obj.y1);
                 if (distance - haversine_distance).abs() > 0.0000001 {
                     println!("Mismatch found in chunk {}: distance: {} vs haversine_distance: {}", i, distance, haversine_distance);
                 }
+                naive_profiler::stop_span(haversine_start, distance_bytes.len() as u64);
             }
         }
-        naive_profiler::stop_span(start_validate);
+        naive_profiler::stop_span(validate_start, 0);
+        naive_profiler::stop_span(start_validate, buffer_size as u64);
     }
 
     // for obj in json_array.objects.iter() {
