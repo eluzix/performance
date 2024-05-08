@@ -113,12 +113,12 @@ impl ParsingData {
             return;
         }
 
-        // let start = naive_profiler::start_span("update_obj");
+        let start = naive_profiler::start_span("update_obj");
         let val = self.val.parse::<f64>().unwrap_or_else(|_| panic!("Error: Could not parse '{}' into a f64.", self.val));
         self.obj.set_val(self.key.as_str(), val);
         self.key.clear();
         self.val.clear();
-        // naive_profiler::stop_span(start);
+        naive_profiler::stop_span(start);
     }
 }
 
@@ -130,6 +130,8 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
     // let mut cpu_time: Duration = start.try_elapsed().expect("Getting process time failed");;
     // println!(" {:?}", cpu_time);
 
+    let init_start = naive_profiler::start_span("Init");
+
     let f = File::open(input_file)?;
     let mut reader = BufReader::new(f);
 
@@ -140,8 +142,9 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
     let mut array_found = false;
 
     let mut parse_data = ParsingData::new();
+    naive_profiler::stop_span(init_start);
 
-    let buffer_start = naive_profiler::start_span("Buffer");
+    let parse_start = naive_profiler::start_span("Parse");
     loop {
         let count = reader.read(&mut buffer)?;
         // if count == 0 || json_array.objects.len() > 10 {
@@ -191,7 +194,7 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
 
     // delete the last object in json_array.objects
     json_array.objects.pop();
-    naive_profiler::stop_span(buffer_start);
+    naive_profiler::stop_span(parse_start);
 
     if validate {
         let start_validate = naive_profiler::start_span("Validate");

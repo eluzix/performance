@@ -9,6 +9,7 @@
   <component name="ChangeListManager">
     <list default="true" id="419335f9-b5ce-401c-b47b-b89bc56d9257" name="Changes" comment="new profiler">
       <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/json_parser.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/json_parser.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/naive_profiler.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/naive_profiler.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
@@ -164,7 +165,8 @@
       <workItem from="1713266750763" duration="5024000" />
       <workItem from="1713446319157" duration="1160000" />
       <workItem from="1713509026311" duration="1208000" />
-      <workItem from="1715144212552" duration="13141000" />
+      <workItem from="1715144212552" duration="14756000" />
+      <workItem from="1715163581144" duration="7122000" />
     </task>
     <task id="LOCAL-00001" summary="json parser">
       <option name="closed" value="true" />
@@ -198,7 +200,15 @@
       <option name="project" value="LOCAL" />
       <updated>1715150492294</updated>
     </task>
-    <option name="localTasksCounter" value="5" />
+    <task id="LOCAL-00005" summary="new profiler">
+      <option name="closed" value="true" />
+      <created>1715161612360</created>
+      <option name="number" value="00005" />
+      <option name="presentableId" value="LOCAL-00005" />
+      <option name="project" value="LOCAL" />
+      <updated>1715161612360</updated>
+    </task>
+    <option name="localTasksCounter" value="6" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
