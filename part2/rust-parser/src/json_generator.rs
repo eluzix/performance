@@ -1,5 +1,4 @@
 use std::io::Write;
-use std::ops::Range;
 use rand::distributions::{Distribution, Uniform};
 use rand::thread_rng;
 use rand::Rng;

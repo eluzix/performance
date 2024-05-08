@@ -2,10 +2,9 @@ use std::error::Error;
 use std::fs::File;
 use std::io::{BufReader, Read};
 use std::mem;
-use std::time::Duration;
-use cpu_time::ProcessTime;
 
 use crate::listing_0065_haversine_formula::reference_haversine;
+use crate::naive_profiler;
 
 type JsonValue = f64;
 
@@ -35,6 +34,7 @@ impl JsonObject {
     }
 
     fn set_val(&mut self, key: &str, val: JsonValue) {
+        // let start = naive_profiler::start_span();
         match key {
             "x0" => self.x0 = val,
             "y0" => self.y0 = val,
@@ -42,6 +42,7 @@ impl JsonObject {
             "y1" => self.y1 = val,
             _ => {}
         }
+        // naive_profiler::stop_span(start, "set_val");
     }
 
     fn clone(&self) -> Self {
@@ -65,17 +66,17 @@ struct ParsingData {
     val: String,
 }
 
-#[derive(Debug)]
-struct TimePoint {
-    time: Duration,
-    label: String,
-}
-
-impl TimePoint {
-    fn new(time: Duration, label: &str) -> Self {
-        TimePoint { time, label: label.to_string()}
-    }
-}
+// #[derive(Debug)]
+// struct TimePoint {
+//     time: Duration,
+//     label: String,
+// }
+//
+// impl TimePoint {
+//     fn new(time: Duration, label: &str) -> Self {
+//         TimePoint { time, label: label.to_string()}
+//     }
+// }
 
 
 impl ParsingData {
@@ -120,9 +121,9 @@ impl ParsingData {
 }
 
 pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
-    let mut vec: Vec<TimePoint> = Vec::with_capacity(5);
-    let start = ProcessTime::try_now().expect("Getting process time failed");
-    vec.push(TimePoint::new(start.elapsed(), "start"));
+    naive_profiler::start_profiling();
+
+    // let start = naive_profiler::start_span();
     // init a Duration vector with 5 places
     // let mut cpu_time: Duration = start.try_elapsed().expect("Getting process time failed");;
     // println!(" {:?}", cpu_time);
@@ -131,14 +132,14 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
     let mut reader = BufReader::new(f);
 
 
-    const BUFFER_SIZE: usize = 1024;
+    const BUFFER_SIZE: usize = 8096;
     let mut buffer = [0_u8; BUFFER_SIZE];
     let mut json_array = JsonArray { objects: Vec::new() };
     let mut array_found = false;
 
     let mut parse_data = ParsingData::new();
 
-    vec.push(TimePoint::new(start.elapsed(), "setup"));
+    let buffer_start = naive_profiler::start_span("Buffer");
     loop {
         let count = reader.read(&mut buffer)?;
         // if count == 0 || json_array.objects.len() > 10 {
@@ -188,9 +189,10 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
 
     // delete the last object in json_array.objects
     json_array.objects.pop();
-    vec.push(TimePoint::new(start.elapsed(), "parse"));
+    naive_profiler::stop_span(&buffer_start);
 
     if validate {
+        let start_validate = naive_profiler::start_span("Validate");
         let binary_file_name = format!("{}.bin", input_file);
         let mut verify_file = File::open(binary_file_name)?;
         let mut buffer = Vec::new();
@@ -213,19 +215,22 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
                 }
             }
         }
-        vec.push(TimePoint::new(start.elapsed(), "validate"));
+        naive_profiler::stop_span(&start_validate);
     }
 
     // for obj in json_array.objects.iter() {
     //     println!("{:?}", obj);
     // }
+    // naive_profiler::stop_span(start, "all");
+    naive_profiler::stop_profiling();
+    naive_profiler::report();
 
-    let total_time = start.elapsed();
-    for i in 0..vec.len() - 1 {
-        let time = vec[i + 1].time - vec[i].time;
-        println!("{}: {:?}", vec[i+1].label, time);
-    }
-    println!("Total time: {:?}", total_time);
+    // let total_time = start.elapsed();
+    // for i in 0..vec.len() - 1 {
+    //     let time = vec[i + 1].time - vec[i].time;
+    //     println!("{}: {:?}", vec[i+1].label, time);
+    // }
+    // println!("Total time: {:?}", total_time);
     // println!("{:?}", vec);
     println!("Total objects: {}", json_array.objects.len());
 

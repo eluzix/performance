@@ -8,3 +8,7 @@ edition = "2021"
 [dependencies]
 cpu-time = "1.0.0"
 rand = "0.8.4"
+once_cell = "1.19.0"
+
+[features]
+profiler = []

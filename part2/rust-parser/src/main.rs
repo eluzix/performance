@@ -1,12 +1,13 @@
 use std::env;
 use std::error::Error;
-use std::io::prelude::*;
+// use std::io::prelude::*;
 
 use json_parser::parse;
 
 mod json_parser;
 mod listing_0065_haversine_formula;
 mod json_generator;
+mod naive_profiler;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
