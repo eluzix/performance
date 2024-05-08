@@ -113,10 +113,12 @@ impl ParsingData {
             return;
         }
 
+        // let start = naive_profiler::start_span("update_obj");
         let val = self.val.parse::<f64>().unwrap_or_else(|_| panic!("Error: Could not parse '{}' into a f64.", self.val));
         self.obj.set_val(self.key.as_str(), val);
         self.key.clear();
         self.val.clear();
+        // naive_profiler::stop_span(start);
     }
 }
 
@@ -189,7 +191,7 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
 
     // delete the last object in json_array.objects
     json_array.objects.pop();
-    naive_profiler::stop_span(&buffer_start);
+    naive_profiler::stop_span(buffer_start);
 
     if validate {
         let start_validate = naive_profiler::start_span("Validate");
@@ -215,7 +217,7 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
                 }
             }
         }
-        naive_profiler::stop_span(&start_validate);
+        naive_profiler::stop_span(start_validate);
     }
 
     // for obj in json_array.objects.iter() {

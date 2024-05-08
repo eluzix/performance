@@ -7,14 +7,9 @@
     <cargoProject FILE="$PROJECT_DIR$/../part2/rust-parser/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="419335f9-b5ce-401c-b47b-b89bc56d9257" name="Changes" comment="TimePoint duration">
-      <change afterPath="$PROJECT_DIR$/../part2/rust-parser/src/naive_profiler.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/Cargo.lock" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/Cargo.toml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/json_generator.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/json_generator.rs" afterDir="false" />
+    <list default="true" id="419335f9-b5ce-401c-b47b-b89bc56d9257" name="Changes" comment="new profiler">
       <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/json_parser.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/json_parser.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/listing_0065_haversine_formula.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/listing_0065_haversine_formula.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/naive_profiler.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/naive_profiler.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -169,7 +164,7 @@
       <workItem from="1713266750763" duration="5024000" />
       <workItem from="1713446319157" duration="1160000" />
       <workItem from="1713509026311" duration="1208000" />
-      <workItem from="1715144212552" duration="6263000" />
+      <workItem from="1715144212552" duration="13141000" />
     </task>
     <task id="LOCAL-00001" summary="json parser">
       <option name="closed" value="true" />
@@ -195,7 +190,15 @@
       <option name="project" value="LOCAL" />
       <updated>1712675346164</updated>
     </task>
-    <option name="localTasksCounter" value="4" />
+    <task id="LOCAL-00004" summary="new profiler">
+      <option name="closed" value="true" />
+      <created>1715150492294</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1715150492294</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -207,7 +210,8 @@
     <MESSAGE value="json parser" />
     <MESSAGE value="json generator mid work" />
     <MESSAGE value="TimePoint duration" />
-    <option name="LAST_COMMIT_MESSAGE" value="TimePoint duration" />
+    <MESSAGE value="new profiler" />
+    <option name="LAST_COMMIT_MESSAGE" value="new profiler" />
   </component>
   <component name="VgoProject">
     <integration-enabled>false</integration-enabled>
