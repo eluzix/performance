@@ -1,6 +1,5 @@
 use std::env;
 use std::error::Error;
-// use std::io::prelude::*;
 
 use json_parser::parse;
 
