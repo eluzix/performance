@@ -27,10 +27,12 @@ struct JsonObject {
 
 impl JsonObject {
     fn reset(&mut self) {
+        let start = naive_profiler::start_span("reset");
         self.x0 = 0.0;
         self.y0 = 0.0;
         self.x1 = 0.0;
         self.y1 = 0.0;
+        naive_profiler::stop_span(start);
     }
 
     fn set_val(&mut self, key: &str, val: JsonValue) {
@@ -137,6 +139,7 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
 
 
     const BUFFER_SIZE: usize = 8096;
+    // const BUFFER_SIZE: usize = 8096 * 1024;
     let mut buffer = [0_u8; BUFFER_SIZE];
     let mut json_array = JsonArray { objects: Vec::new() };
     let mut array_found = false;
@@ -146,12 +149,15 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
 
     let parse_start = naive_profiler::start_span("Parse");
     loop {
+        let start = naive_profiler::start_span("Read");
         let count = reader.read(&mut buffer)?;
+        naive_profiler::stop_span(start);
         // if count == 0 || json_array.objects.len() > 10 {
         if count == 0 {
             break;
         }
 
+        let start = naive_profiler::start_span("Loop");
         let string_slice = std::str::from_utf8(&buffer[..count])?;
         for char in string_slice.chars() {
             if !array_found {
@@ -190,6 +196,7 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
                 }
             }
         }
+        naive_profiler::stop_span(start);
     }
 
     // delete the last object in json_array.objects

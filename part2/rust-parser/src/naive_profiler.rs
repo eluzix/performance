@@ -55,12 +55,15 @@ impl TimePoint {
 
     // fn mark_span(&mut self) -> Duration {
     fn mark_span(&mut self) -> u64 {
-        let now = high_resolution_time();
-        let time = now - self.start_time;
-        self.start_time = now;
+        let time = high_resolution_time() - self.start_time;
+        // self.start_time = now;
         self.total_time += time;
         self.hit_count += 1;
         time
+    }
+
+    fn restart(&mut self) {
+        self.start_time = high_resolution_time();
     }
 }
 
@@ -112,7 +115,10 @@ pub fn start_span(label: &str) -> usize {
     let idx = profiler.time_points.iter().position(|p| p.label == label);
 
     let index = match idx {
-        Some(index) => index,
+        Some(index) => {
+            profiler.time_points[index].restart();
+            index
+        },
         None => {
             let tp = TimePoint::new(label);
             profiler.time_points.push(tp);
@@ -127,7 +133,6 @@ pub fn start_span(label: &str) -> usize {
             index
         }
     };
-
     if profiler.stack.is_empty() {
         profiler.stack.push(index);
     } else {
@@ -145,13 +150,16 @@ pub fn stop_span(index: usize) {
     let profiler = unsafe { &mut NAIVE_PROFILER };
     if let Some(time_point) = profiler.time_points.get_mut(index) {
         let elapsed = time_point.mark_span();
+        let label = &time_point.label.clone();
 
         if let Some(parent_index) = time_point.parent_index {
             let parent_time_point = &mut profiler.time_points[parent_index];
+            // println!("For {}, parent label: {}", label, parent_time_point.label);
             parent_time_point.children_time += elapsed;
 
             let latest_root_index = *profiler.stack.last().unwrap();
             if latest_root_index == index {
+                // println!("Popping {} from stack", label);
                 profiler.stack.pop();
             }
         }
@@ -185,7 +193,8 @@ pub fn report() {
         let point_time = Duration::from_nanos((point_total_time * time_info.numer as u64 ) / time_info.denom as u64);
         // let percent = (point_total_time.as_secs_f64() / total_time.as_secs_f64()) * 100.0;
         let percent = (point_time.as_secs_f64() / total_time.as_secs_f64()) * 100.0;
-        println!("{}: {:?} {:?} ({} hits, {:.2}%)", point.label, point_time, point_total_time, point.hit_count, percent);
+        println!("{}: {:?} ({} hits, {:.2}%)", point.label, point_total_time, point.hit_count, percent);
+        // println!("{}: {:?} {:?} ({} hits, {:.2}%)", point.label, point_time, point_total_time, point.hit_count, percent);
     }
     println!("Total time: {:?}", total_time);
 }
