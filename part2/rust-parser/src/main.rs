@@ -7,17 +7,36 @@ mod json_parser;
 mod listing_0065_haversine_formula;
 mod json_generator;
 mod naive_profiler;
+mod repetition_tester;
+mod listing_0102_read_overhead_test;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
 
     // check for 2 different options: generate and parse each get a file path as an argument
     if args.len() < 3 {
-        eprintln!("Usage: {} generate|parse <file>", args[0]);
+        eprintln!("Usage: {} generate|parse|run <file|listing>", args[0]);
         std::process::exit(1);
     }
 
     match &args[1][..] {
+        "run" => {
+            if args.len() < 3 {
+                eprintln!("Usage: {} run <listing>", args[0]);
+                std::process::exit(1);
+            }
+
+            match &args[2][..] {
+                "102" => {
+                    listing_0102_read_overhead_test::run();
+                }
+                _ => {
+                    eprintln!("Invalid listing");
+                    std::process::exit(1);
+                }
+            }
+        }
+
         "generate" => {
             if args.len() < 4 {
                 eprintln!("Usage: {} generate <file> <count> [cluster|uniform] [seed]", args[0]);

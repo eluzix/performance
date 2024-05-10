@@ -4,7 +4,7 @@ extern crate mach;
 
 use mach::mach_time::{mach_absolute_time, mach_timebase_info};
 
-fn high_resolution_info() -> mach_timebase_info {
+pub fn high_resolution_info() -> mach_timebase_info {
     unsafe {
         let mut info = mach_timebase_info { numer: 0, denom: 0 };
         mach_timebase_info(&mut info);
@@ -12,13 +12,13 @@ fn high_resolution_info() -> mach_timebase_info {
     }
 }
 
-fn high_resolution_time() -> u64 {
+pub fn high_resolution_time() -> u64 {
     unsafe {
         mach_absolute_time()
     }
 }
 
-fn high_resolution_clock() -> Duration {
+pub fn high_resolution_clock() -> Duration {
     unsafe {
         let time = mach_absolute_time();
         let mut info = mach_timebase_info { numer: 0, denom: 0 };
@@ -149,7 +149,7 @@ pub fn stop_span(index: usize, bytes_processed: u64) {
     let profiler = unsafe { &mut NAIVE_PROFILER };
     if let Some(time_point) = profiler.time_points.get_mut(index) {
         let elapsed = time_point.mark_span(bytes_processed);
-        let label = &time_point.label.clone();
+        // let label = &time_point.label.clone();
 
         if let Some(parent_index) = time_point.parent_index {
             let parent_time_point = &mut profiler.time_points[parent_index];
@@ -196,8 +196,8 @@ pub fn report() {
         if point.bytes_processed > 0 {
             let mb_processed = point.bytes_processed as f64 / 1024.0 / 1024.0;
             let gb_processed = mb_processed / 1024.0;
-            let gb_per_sec = gb_processed / point_time.as_secs_f64();
-            print!(" ({:.2} MB, {:.2} GB/s)", mb_processed, gb_processed);
+            let bandwidth = gb_processed / point_time.as_secs_f64();
+            print!(" ({:.2} MB, {:.6} GB/s)", mb_processed, bandwidth);
         }
         println!();
         // println!("{}: {:?} {:?} ({} hits, {:.2}%)", point.label, point_time, point_total_time, point.hit_count, percent);
