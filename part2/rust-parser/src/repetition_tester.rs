@@ -1,10 +1,8 @@
-use std::io;
-
 pub mod repetition_tester {
+    use crate::perf_metrics::{get_page_faults, high_resolution_info, high_resolution_time};
+    use mach::mach_time::mach_timebase_info;
     use std::io::Write;
     use std::time::Duration;
-    use mach::mach_time::mach_timebase_info;
-    use crate::naive_profiler::{high_resolution_info, high_resolution_time};
 
     #[derive(PartialEq, Copy, Debug, Clone)]
     enum State {
@@ -15,11 +13,20 @@ pub mod repetition_tester {
     }
 
     #[derive(Debug, Copy, Clone)]
+    enum RepetitionTesterMetrics {
+        TestCount,
+        Time,
+        PageFaults,
+        ByteCount,
+
+        Count,
+    }
+
+    #[derive(Debug, Copy, Clone)]
     pub struct RepetitionTesterResults {
-        pub test_count: u64,
-        pub total_time: u64,
-        pub max_time: u64,
-        pub min_time: u64,
+        pub totals: [u64; RepetitionTesterMetrics::Count as usize],
+        pub min: [u64; RepetitionTesterMetrics::Count as usize],
+        pub max: [u64; RepetitionTesterMetrics::Count as usize],
     }
 
     #[derive(Debug, Copy, Clone)]
@@ -33,10 +40,11 @@ pub mod repetition_tester {
         close_blocks_count: u32,
 
         expected_bytes: u64,
-        total_bytes_accumulated: u64,
-        total_time_accumulated: u64,
+        test_metrics: [u64; RepetitionTesterMetrics::Count as usize],
 
         results: RepetitionTesterResults,
+
+        pid: i32,
     }
 
     impl RepetitionTester {
@@ -49,14 +57,13 @@ pub mod repetition_tester {
                 open_blocks_count: 0,
                 close_blocks_count: 0,
                 expected_bytes: 0,
-                total_bytes_accumulated: 0,
-                total_time_accumulated: 0,
+                pid: std::process::id() as i32,
 
+                test_metrics: [0; RepetitionTesterMetrics::Count as usize],
                 results: RepetitionTesterResults {
-                    test_count: 0,
-                    total_time: 0,
-                    max_time: 0,
-                    min_time: 0,
+                    totals: [0; RepetitionTesterMetrics::Count as usize],
+                    min: [0; RepetitionTesterMetrics::Count as usize],
+                    max: [0; RepetitionTesterMetrics::Count as usize],
                 },
             }
         }
@@ -68,10 +75,12 @@ pub mod repetition_tester {
                     self.start_time = high_resolution_time();
                     self.open_blocks_count = 0;
                     self.close_blocks_count = 0;
-                    self.total_bytes_accumulated = 0;
-                    self.total_time_accumulated = 0;
                     self.expected_bytes = expected_bytes;
-
+                    self.results = RepetitionTesterResults {
+                        totals: [0; RepetitionTesterMetrics::Count as usize],
+                        min: [0; RepetitionTesterMetrics::Count as usize],
+                        max: [0; RepetitionTesterMetrics::Count as usize],
+                    };
                 }
                 State::Completed => {
                     self.state = State::Testing;
@@ -95,17 +104,22 @@ pub mod repetition_tester {
 
         pub fn begin_time(&mut self) {
             self.open_blocks_count += 1;
-            // self.start_time = high_resolution_time();
-            self.total_time_accumulated = high_resolution_time();
+            self.test_metrics[RepetitionTesterMetrics::Time as usize] = high_resolution_time();
+            self.test_metrics[RepetitionTesterMetrics::PageFaults as usize] =
+                get_page_faults(self.pid) as u64;
         }
 
         pub fn end_time(&mut self) {
             self.close_blocks_count += 1;
-            self.total_time_accumulated = high_resolution_time() - self.total_time_accumulated;
+            self.test_metrics[RepetitionTesterMetrics::Time as usize] =
+                high_resolution_time() - self.test_metrics[RepetitionTesterMetrics::Time as usize];
+            self.test_metrics[RepetitionTesterMetrics::PageFaults as usize] =
+                get_page_faults(self.pid) as u64
+                    - self.test_metrics[RepetitionTesterMetrics::PageFaults as usize];
         }
 
         pub fn count_bytes(&mut self, bytes: u64) {
-            self.total_bytes_accumulated += bytes;
+            self.test_metrics[RepetitionTesterMetrics::ByteCount as usize] += bytes;
         }
 
         pub fn is_testing(&mut self) -> bool {
@@ -116,29 +130,40 @@ pub mod repetition_tester {
                         self.set_error("Open and close blocks do not match");
                     }
 
-                    if self.state == State::Testing {
-                        let elapsed_time = self.total_time_accumulated;
-                        self.results.test_count += 1;
-                        self.results.total_time += elapsed_time;
+                    if self.test_metrics[RepetitionTesterMetrics::ByteCount as usize]
+                        != self.expected_bytes
+                    {
+                        self.set_error("Byte count does not match expected bytes");
+                    }
 
-                        if self.results.max_time < elapsed_time {
-                            self.results.max_time = elapsed_time;
+                    if self.state == State::Testing {
+                        self.test_metrics[RepetitionTesterMetrics::TestCount as usize] = 1;
+
+                        for i in 0..RepetitionTesterMetrics::Count as usize {
+                            self.results.totals[i] += self.test_metrics[i];
                         }
 
-                        if self.results.min_time == 0 || self.results.min_time > elapsed_time {
-                            self.results.min_time = elapsed_time;
+                        if self.results.max[RepetitionTesterMetrics::Time as usize]
+                            < self.test_metrics[RepetitionTesterMetrics::Time as usize]
+                        {
+                            self.results.max = self.test_metrics;
+                        }
+
+                        if self.results.min[RepetitionTesterMetrics::Time as usize] == 0
+                            || self.results.min[RepetitionTesterMetrics::Time as usize]
+                                > self.test_metrics[RepetitionTesterMetrics::Time as usize]
+                        {
+                            self.results.min = self.test_metrics;
 
                             self.start_time = current_time;
-                            self.print_time("Min", self.results.min_time, self.total_bytes_accumulated, true);
+                            self.print_time("Min", self.results.min, true);
                         }
 
                         self.open_blocks_count = 0;
                         self.close_blocks_count = 0;
-                        self.total_bytes_accumulated = 0;
-                        self.total_time_accumulated = 0;
+                        self.test_metrics = [0; RepetitionTesterMetrics::Count as usize];
                     }
-                    // print current time, start time, and time to wait
-                    // println!("- time: {}, Current time: {}, Start time: {}, Time to wait: {}", current_time - self.start_time, current_time, self.start_time, self.time_to_wait);
+
                     if current_time - self.start_time > self.time_to_wait {
                         self.state = State::Completed;
                         self.print_results();
@@ -149,26 +174,51 @@ pub mod repetition_tester {
             self.state == State::Testing
         }
 
-
         // helper functions
         fn time_from_seconds(&mut self, seconds: u64) -> u64 {
-            seconds * 1_000_000_00 * self.cpu_timebase_info.denom as u64 / self.cpu_timebase_info.denom as u64
+            seconds * 1_000_000_00 * self.cpu_timebase_info.denom as u64
+                / self.cpu_timebase_info.denom as u64
         }
 
         fn time_as_seconds(&mut self, time: u64) -> Duration {
-            Duration::from_nanos(time * self.cpu_timebase_info.numer as u64 / self.cpu_timebase_info.denom as u64)
+            Duration::from_nanos(
+                time * self.cpu_timebase_info.numer as u64 / self.cpu_timebase_info.denom as u64,
+            )
         }
 
-        fn print_time(&mut self, label: &str, time: u64, bytes: u64, carrier_return: bool) {
+        // fn print_time(&mut self, label: &str, time: u64, bytes: u64, carrier_return: bool) {
+        fn print_time(
+            &mut self,
+            label: &str,
+            value: [u64; RepetitionTesterMetrics::Count as usize],
+            carrier_return: bool,
+        ) {
+            let test_count = value[RepetitionTesterMetrics::TestCount as usize];
+            let mut local_value = [0; RepetitionTesterMetrics::Count as usize];
+            for i in 0..RepetitionTesterMetrics::Count as usize {
+                local_value[i] = value[i] / test_count as u64;
+            }
+
+            let time = local_value[RepetitionTesterMetrics::Time as usize];
             let time_in_seconds = self.time_as_seconds(time);
             // println!("{}: {} ({}s)", label, time, time_in_seconds.as_secs_f64());
 
             print!("{}: {} ({}s)", label, time, time_in_seconds.as_secs_f64());
 
+            let bytes = local_value[RepetitionTesterMetrics::ByteCount as usize];
             if bytes > 0 {
                 let gb_processed = bytes as f64 / (1024.0 * 1024.0 * 1024.0);
                 let bandwidth = gb_processed / time_in_seconds.as_secs_f64();
                 print!(" ({:.10} GB/s)", bandwidth);
+            }
+
+            let page_faults = local_value[RepetitionTesterMetrics::PageFaults as usize];
+            if page_faults > 0 {
+                print!(
+                    " (PF: {:.4}, {:.4}k/fault)",
+                    page_faults,
+                    bytes as f64 / (page_faults as f64 * 1024.0)
+                );
             }
 
             if carrier_return {
@@ -180,13 +230,9 @@ pub mod repetition_tester {
         }
 
         fn print_results(&mut self) {
-            self.print_time("Min", self.results.min_time, self.expected_bytes, false);
-            self.print_time("Max", self.results.max_time, self.expected_bytes, false);
-
-            if self.results.test_count > 1 {
-                let average_time = self.results.total_time / self.results.test_count;
-                self.print_time("Average", average_time, self.expected_bytes, false);
-            }
+            self.print_time("Min", self.results.min, false);
+            self.print_time("Max", self.results.max, false);
+            self.print_time("Avg.", self.results.totals, false);
         }
     }
 }

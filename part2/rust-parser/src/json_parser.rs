@@ -78,11 +78,15 @@ struct ParsingData {
 //     }
 // }
 
-
 impl ParsingData {
     fn new() -> Self {
         ParsingData {
-            obj: JsonObject { x0: 0.0, y0: 0.0, x1: 0.0, y1: 0.0 },
+            obj: JsonObject {
+                x0: 0.0,
+                y0: 0.0,
+                x1: 0.0,
+                y1: 0.0,
+            },
             state: State::Reading,
             key: String::new(),
             val: String::new(),
@@ -113,7 +117,10 @@ impl ParsingData {
             return;
         }
 
-        let val = self.val.parse::<f64>().unwrap_or_else(|_| panic!("Error: Could not parse '{}' into a f64.", self.val));
+        let val = self
+            .val
+            .parse::<f64>()
+            .unwrap_or_else(|_| panic!("Error: Could not parse '{}' into a f64.", self.val));
         self.obj.set_val(self.key.as_str(), val);
         self.key.clear();
         self.val.clear();
@@ -133,11 +140,12 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
     let f = File::open(input_file)?;
     let mut reader = BufReader::new(f);
 
-
     // const BUFFER_SIZE: usize = 8096;
     const BUFFER_SIZE: usize = 8096 * 1024;
     let mut buffer = [0_u8; BUFFER_SIZE];
-    let mut json_array = JsonArray { objects: Vec::new() };
+    let mut json_array = JsonArray {
+        objects: Vec::new(),
+    };
     let mut array_found = false;
 
     let mut parse_data = ParsingData::new();
@@ -211,7 +219,6 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
         let buffer_size = buffer.len();
         naive_profiler::stop_span(validate_start, buffer_size as u64);
 
-
         let validate_start = naive_profiler::start_span("Validate parse");
         let chunk_size = mem::size_of::<f64>();
         for (i, chunk) in buffer.chunks(chunk_size).enumerate() {
@@ -228,7 +235,10 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
                 let haversine_start = naive_profiler::start_span("Haversine");
                 let haversine_distance = reference_haversine(obj.x0, obj.y0, obj.x1, obj.y1);
                 if (distance - haversine_distance).abs() > 0.0000001 {
-                    println!("Mismatch found in chunk {}: distance: {} vs haversine_distance: {}", i, distance, haversine_distance);
+                    println!(
+                        "Mismatch found in chunk {}: distance: {} vs haversine_distance: {}",
+                        i, distance, haversine_distance
+                    );
                 }
                 naive_profiler::stop_span(haversine_start, distance_bytes.len() as u64);
             }

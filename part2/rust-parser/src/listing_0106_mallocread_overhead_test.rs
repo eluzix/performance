@@ -1,8 +1,9 @@
-use crate::repetition_tester::repetition_tester::RepetitionTester;
 use std::cell::RefCell;
 use std::fs::File;
 use std::io::Read;
 use std::rc::Rc;
+
+use crate::repetition_tester::repetition_tester::RepetitionTester;
 
 struct TestParams {
     file_name: &'static str,
@@ -12,10 +13,11 @@ struct TestParams {
 
 fn run_full_read_test(tester: &mut RepetitionTester, params: &TestParams) {
     tester.start_test_wave(params.seconds_to_try, params.expected_bytes);
+    let mut buffer = Vec::with_capacity(params.expected_bytes as usize);
 
     while tester.is_testing() {
         let mut verify_file = File::open(params.file_name).unwrap();
-        let mut buffer = Vec::new();
+        buffer.clear();
 
         tester.begin_time();
         match verify_file.read_to_end(&mut buffer) {
@@ -32,11 +34,11 @@ fn run_full_read_test(tester: &mut RepetitionTester, params: &TestParams) {
 
 fn run_buffered_read_test(tester: &mut RepetitionTester, params: &TestParams) {
     tester.start_test_wave(params.seconds_to_try, params.expected_bytes);
+    const BUFFER_SIZE: usize = 8096 * 100;
+    let mut buffer = [0_u8; BUFFER_SIZE];
 
     while tester.is_testing() {
         let mut reader = File::open(params.file_name).unwrap();
-        const BUFFER_SIZE: usize = 8096;
-        let mut buffer = [0_u8; BUFFER_SIZE];
         let mut total_bytes_read = 0;
 
         tester.begin_time();

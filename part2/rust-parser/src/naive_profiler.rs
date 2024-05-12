@@ -1,32 +1,6 @@
-use std::time::Duration;
+use crate::perf_metrics::{high_resolution_info, high_resolution_time};
 use once_cell::unsync::Lazy;
-extern crate mach;
-
-use mach::mach_time::{mach_absolute_time, mach_timebase_info};
-
-pub fn high_resolution_info() -> mach_timebase_info {
-    unsafe {
-        let mut info = mach_timebase_info { numer: 0, denom: 0 };
-        mach_timebase_info(&mut info);
-        info
-    }
-}
-
-pub fn high_resolution_time() -> u64 {
-    unsafe {
-        mach_absolute_time()
-    }
-}
-
-pub fn high_resolution_clock() -> Duration {
-    unsafe {
-        let time = mach_absolute_time();
-        let mut info = mach_timebase_info { numer: 0, denom: 0 };
-        mach_timebase_info(&mut info);
-        let nanos = time * info.numer as u64 / info.denom as u64;
-        Duration::from_nanos(nanos)
-    }
-}
+use std::time::Duration;
 
 #[derive(Debug, Clone)]
 pub struct TimePoint {
@@ -117,7 +91,7 @@ pub fn start_span(label: &str) -> usize {
         Some(index) => {
             profiler.time_points[index].restart();
             index
-        },
+        }
         None => {
             let tp = TimePoint::new(label);
             profiler.time_points.push(tp);
@@ -183,16 +157,23 @@ pub fn stop_span(_: usize, bytes_processed: u64) {}
 pub fn report() {
     let profiler = unsafe { &mut NAIVE_PROFILER };
     let time_info = high_resolution_info();
-    let total_time = Duration::from_nanos((profiler.elapsed_time.unwrap() * time_info.numer as u64 ) / time_info.denom as u64);
+    let total_time = Duration::from_nanos(
+        (profiler.elapsed_time.unwrap() * time_info.numer as u64) / time_info.denom as u64,
+    );
 
     for point in &profiler.time_points {
         // println!("{}: {:?} {:?}", point.label, point.total_time, point.children_time);
         // let point_total_time = point.total_time;
         let point_total_time = point.total_time - point.children_time;
-        let point_time = Duration::from_nanos((point_total_time * time_info.numer as u64 ) / time_info.denom as u64);
+        let point_time = Duration::from_nanos(
+            (point_total_time * time_info.numer as u64) / time_info.denom as u64,
+        );
         // let percent = (point_total_time.as_secs_f64() / total_time.as_secs_f64()) * 100.0;
         let percent = (point_time.as_secs_f64() / total_time.as_secs_f64()) * 100.0;
-        print!("{}: {:?} ({} hits, {:.2}%)", point.label, point_total_time, point.hit_count, percent);
+        print!(
+            "{}: {:?} ({} hits, {:.2}%)",
+            point.label, point_total_time, point.hit_count, percent
+        );
         if point.bytes_processed > 0 {
             let mb_processed = point.bytes_processed as f64 / 1024.0 / 1024.0;
             let gb_processed = mb_processed / 1024.0;

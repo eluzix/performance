@@ -10,6 +10,7 @@ cpu-time = "1.0.0"
 rand = "0.8.4"
 once_cell = "1.19.0"
 mach = "0.3.2"
+libc = "0.2.154"
 
 [features]
 profiler = []

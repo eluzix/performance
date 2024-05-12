@@ -1,13 +1,18 @@
-use std::io::Write;
 use rand::distributions::{Distribution, Uniform};
 use rand::thread_rng;
 use rand::Rng;
 use rand::SeedableRng;
+use std::io::Write;
 
 use crate::listing_0065_haversine_formula::reference_haversine;
 
 // a function that gets a point and a range and returns a random number within that range
-fn random_in_range(x0: (f64, f64), y0: (f64, f64), x1: (f64, f64), y1: (f64, f64)) -> (f64, f64, f64, f64) {
+fn random_in_range(
+    x0: (f64, f64),
+    y0: (f64, f64),
+    x1: (f64, f64),
+    y1: (f64, f64),
+) -> (f64, f64, f64, f64) {
     let mut rng = thread_rng();
 
     // Correctly create a uniform distribution for each range
@@ -25,21 +30,31 @@ fn random_in_range(x0: (f64, f64), y0: (f64, f64), x1: (f64, f64), y1: (f64, f64
     (rand_x0, rand_y0, rand_x1, rand_y1)
 }
 
-fn point_for_range(start: f64, end: f64) -> (f64, f64){
+fn point_for_range(start: f64, end: f64) -> (f64, f64) {
     let mut rng = thread_rng();
     let point = rng.gen_range(start..=end);
     // range starting from point till range end's
     (point, rng.gen_range(point..=end))
 }
 
-pub fn generate_json(method: &str, count: usize, seed: u64, output_file: &str) -> Result<(), std::io::Error>{
+pub fn generate_json(
+    method: &str,
+    count: usize,
+    seed: u64,
+    output_file: &str,
+) -> Result<(), std::io::Error> {
     let mut ranges;
 
     // set the seed
     rand::rngs::StdRng::seed_from_u64(seed);
 
     if method == "uniform" {
-        ranges = vec![(-180.0, 180.0), (-90.0, 90.0), (-180.0, 180.0), (-90.0, 90.0)];
+        ranges = vec![
+            (-180.0, 180.0),
+            (-90.0, 90.0),
+            (-180.0, 180.0),
+            (-90.0, 90.0),
+        ];
     } else {
         let mut rng = thread_rng();
         let num_clusters = rng.gen_range(3..=10);
@@ -63,7 +78,8 @@ pub fn generate_json(method: &str, count: usize, seed: u64, output_file: &str) -
 
     let mut file = std::fs::File::create(output_file).expect("Unable to create file");
     let mut line = format!("{{\"pairs\":[\n");
-    file.write(line.as_bytes()).expect("Unable to write data to file");
+    file.write(line.as_bytes())
+        .expect("Unable to write data to file");
 
     let sum_coefficient = 1.0 / count as f64;
     let mut total = 0.0;
@@ -73,7 +89,10 @@ pub fn generate_json(method: &str, count: usize, seed: u64, output_file: &str) -
         let distance = reference_haversine(x0, y0, x1, y1);
 
         // write to file
-        let json_line = format!("{{\"x0\":{},\"y0\":{},\"x1\":{},\"y1\":{}}}\n", x0, y0, x1, y1);
+        let json_line = format!(
+            "{{\"x0\":{},\"y0\":{},\"x1\":{},\"y1\":{}}}\n",
+            x0, y0, x1, y1
+        );
         file.write_all(json_line.as_bytes())?;
         // write x0, y0, x1, y1 to binary file + new line
         binary_file.write_all(&distance.to_be_bytes())?;
