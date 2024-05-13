@@ -76,7 +76,6 @@ fn get_test_params() -> TestParams {
 }
 
 pub fn run() {
-    println!("Listing 1-2: Read Overhead Test");
     let params = get_test_params();
 
     let testers = vec![

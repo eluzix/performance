@@ -11,6 +11,7 @@ mod listing_0106_mallocread_overhead_test;
 mod naive_profiler;
 mod perf_metrics;
 mod repetition_tester;
+mod listing_0112_os_fault_counter_main;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
@@ -34,6 +35,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
                 "106" => {
                     listing_0106_mallocread_overhead_test::run();
+                }
+                "112" => {
+                    listing_0112_os_fault_counter_main::run();
                 }
                 _ => {
                     eprintln!("Invalid listing");
