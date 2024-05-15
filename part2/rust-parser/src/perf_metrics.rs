@@ -109,30 +109,30 @@ pub fn high_resolution_clock() -> Duration {
 
 #[derive(Debug)]
 pub struct VirtualAddress {
-    pml4_index: u16,
-    pdpt_index: u16,
-    pd_index: u16,
-    pt_index: u16,
+    l1_index: u16,
+    l2_index: u16,
+    l3_index: u16,
+    l4_index: u16,
     offset: u16,
 }
 
 impl VirtualAddress {
     pub fn from_pointer(pointer: usize) -> Self {
         VirtualAddress {
-            pml4_index: ((pointer >> 39) & 0x1FF) as u16,
-            pdpt_index: ((pointer >> 30) & 0x1FF) as u16,
-            pd_index: ((pointer >> 21) & 0x1FF) as u16,
-            pt_index: ((pointer >> 12) & 0x1FF) as u16,
+            l1_index: ((pointer >> 39) & 0x1FF) as u16,
+            l2_index: ((pointer >> 30) & 0x1FF) as u16,
+            l3_index: ((pointer >> 21) & 0x1FF) as u16,
+            l4_index: ((pointer >> 12) & 0x1FF) as u16,
             offset: (pointer & 0xFFF) as u16,
         }
     }
 
     pub fn print(&self) {
         println!("{} | {} | {} | {} | {}",
-                 self.pml4_index,
-                 self.pdpt_index,
-                 self.pd_index,
-                 self.pt_index,
+                 self.l1_index,
+                 self.l2_index,
+                 self.l3_index,
+                 self.l4_index,
                  self.offset
         );
     }
