@@ -1,7 +1,7 @@
 extern crate libc;
-use libc::{mmap, munmap, PROT_READ, PROT_WRITE, MAP_SHARED, MAP_ANON, MAP_FAILED};
+use libc::{mmap, munmap, PROT_READ, PROT_WRITE, MAP_PRIVATE, MAP_ANON, MAP_FAILED};
 use std::ptr;
-use crate::perf_metrics::get_page_faults;
+use crate::perf_metrics::{get_page_faults, VirtualAddress};
 
 pub fn run() {
     let page_size = 4096 * 4;
@@ -18,7 +18,7 @@ pub fn run() {
                 ptr::null_mut(),   // Address at which to start the mapping (nullptr lets the OS choose)
                 total_size,       // Number of bytes to map
                 PROT_READ | PROT_WRITE, // Enable read and write access
-                MAP_SHARED | MAP_ANON,  // Shared changes and anonymous mapping
+                MAP_PRIVATE | MAP_ANON,
                 -1,                // File descriptor not used with MAP_ANON
                 0,                 // Offset not used with MAP_ANON
             )
@@ -38,6 +38,11 @@ pub fn run() {
         }
         let end_faults = get_page_faults(pid);
         let fault_count = end_faults - start_faults;
+
+        if fault_count > 0 {
+            let vaddr = VirtualAddress::from_pointer(addr as usize + touch_size);
+            vaddr.print();
+        }
 
         println!("{}, {}, {}, {}", page_count, touch_count, fault_count, fault_count - touch_count as i32);
 
