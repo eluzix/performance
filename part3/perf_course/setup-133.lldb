@@ -1,0 +1,6 @@
+target stop-hook add --one-liner "disassemble --frame"
+# target stop-hook add --one-liner "register read x8 x9 x29 sp"
+# b listing_0133_front_end_test_main.rs:89
+b listing_0133_front_end_test_main.rs:57
+# b listing_0133_front_end_test_main.rs:107
+r

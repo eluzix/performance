@@ -6,3 +6,4 @@ release/
 
 haversine_data.json
 haversine_data.json.bin
+*.o

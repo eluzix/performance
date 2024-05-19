@@ -4,10 +4,10 @@ use std::fs::File;
 use std::io::Read;
 use std::rc::Rc;
 
-struct TestParams {
-    file_name: &'static str,
-    expected_bytes: u64,
-    seconds_to_try: u64,
+pub struct TestParams {
+    pub file_name: &'static str,
+    pub expected_bytes: u64,
+    pub seconds_to_try: u64,
 }
 
 fn run_full_read_test(tester: &mut RepetitionTester, params: &TestParams) {
@@ -62,7 +62,7 @@ fn run_read_file_to_string_test(tester: &mut RepetitionTester, params: &TestPara
     }
 }
 
-fn get_test_params() -> TestParams {
+pub(crate) fn get_test_params() -> TestParams {
     let file_name = "haversine_data.json";
     let file = File::open(file_name).unwrap();
     let expected_bytes = file.metadata().unwrap().len();

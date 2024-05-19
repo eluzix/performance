@@ -8,10 +8,11 @@ mod json_parser;
 mod listing_0065_haversine_formula;
 mod listing_0102_read_overhead_test;
 mod listing_0106_mallocread_overhead_test;
-mod naive_profiler;
-mod perf_metrics;
-mod repetition_tester;
+pub mod naive_profiler;
+pub mod perf_metrics;
+pub mod repetition_tester;
 mod listing_0112_os_fault_counter_main;
+mod listing_0110_pagefault_overhead_test;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let args: Vec<String> = env::args().collect();
@@ -38,6 +39,9 @@ fn main() -> Result<(), Box<dyn Error>> {
                 }
                 "112" => {
                     listing_0112_os_fault_counter_main::run();
+                }
+                "110" => {
+                    listing_0110_pagefault_overhead_test::run();
                 }
                 _ => {
                     eprintln!("Invalid listing");

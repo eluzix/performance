@@ -1,5 +1,5 @@
 [package]
-name = "rust-parser"
+name = "rust_parser"
 version = "0.1.0"
 edition = "2021"
 
@@ -11,6 +11,10 @@ rand = "0.8.4"
 once_cell = "1.19.0"
 mach = "0.3.2"
 libc = "0.2.154"
+memmap2 = "0.9.4"
 
 [features]
 profiler = []
+
+[profile.dev]
+opt-level = 1
