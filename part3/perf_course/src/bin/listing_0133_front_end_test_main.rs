@@ -1,21 +1,20 @@
-
 extern crate perf_course;
 
 use std::cell::RefCell;
 use std::error::Error;
 use std::ptr;
 use std::rc::Rc;
+
 use libc::{MAP_ANON, MAP_PRIVATE, mmap, PROT_READ, PROT_WRITE, size_t};
 
 use perf_course::repetition_tester::repetition_tester::RepetitionTester;
 
-
 extern "C" {
-    fn GarbageLoopExample(count:u64, data: *mut u8);
-    fn FullLoopExample(count:u64, data: *mut u8);
-    fn NopLoopExample(count:u64);
-    fn JustLoopExample(count:u64);
-    fn DecLoopExample(count:u64);
+    fn GarbageLoopExample(count: u64, data: *mut u8);
+    fn FullLoopExample(count: u64, data: *mut u8);
+    fn NopLoopExample(count: u64);
+    fn JustLoopExample(count: u64);
+    fn DecLoopExample(count: u64);
 }
 
 struct TestParams {
@@ -23,6 +22,12 @@ struct TestParams {
     expected_bytes: u64,
     seconds_to_try: u64,
     buffer: *mut u8,
+}
+
+struct TesterFunction {
+    name: &'static str,
+    function: fn(&mut RepetitionTester, &TestParams),
+    tester: Rc<RefCell<RepetitionTester>>,
 }
 
 fn write_all_bytes(tester: &mut RepetitionTester, params: &TestParams) {
@@ -144,88 +149,52 @@ fn main() -> Result<(), Box<dyn Error>> {
         )
     };
 
+    let mut functions = vec![
+        TesterFunction {
+            name: "Write All Bytes Test",
+            function: write_all_bytes,
+            tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        },
+        TesterFunction {
+            name: "FullLoopExample Test",
+            function: write_full_loop_example,
+            tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        },
+        TesterFunction {
+            name: "GarbageLoopExample Test",
+            function: garbage_loop_example,
+            tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        },
+        TesterFunction {
+            name: "NopLoopExample Test",
+            function: nop_loop_example,
+            tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        },
+        TesterFunction {
+            name: "JustLoopExample Test",
+            function: just_loop_example,
+            tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        },
+        TesterFunction {
+            name: "DecLoopExample Test",
+            function: dec_loop_example,
+            tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        },
+    ];
+
     let params = TestParams {
         expected_bytes: total_size as u64,
         seconds_to_try: 2,
         buffer: addr as *mut u8,
     };
 
-    let testers = vec![
-        Rc::new(RefCell::new(RepetitionTester::new())),
-        Rc::new(RefCell::new(RepetitionTester::new())),
-        Rc::new(RefCell::new(RepetitionTester::new())),
-        Rc::new(RefCell::new(RepetitionTester::new())),
-        Rc::new(RefCell::new(RepetitionTester::new())),
-        Rc::new(RefCell::new(RepetitionTester::new())),
-    ];
-
-    let mut test_functions: Vec<(&str, Box<dyn FnMut()>)> = vec![
-        (
-            "Write All Bytes Test",
-            Box::new({
-                let tester = Rc::clone(&testers[4]);
-                let params = &params;
-                move || {
-                    write_all_bytes(&mut *tester.borrow_mut(), params);
-                }
-            }),
-        ),
-        (
-            "FullLoopExample Test",
-            Box::new({
-                let tester = Rc::clone(&testers[0]);
-                let params = &params;
-                move || {
-                    write_full_loop_example(&mut *tester.borrow_mut(), params);
-                }
-            }),
-        ),
-        (
-            "GarbageLoopExample Test",
-            Box::new({
-                let tester = Rc::clone(&testers[5]);
-                let params = &params;
-                move || {
-                    garbage_loop_example(&mut *tester.borrow_mut(), params);
-                }
-            }),
-        ),
-        (
-            "NopLoopExample Test",
-            Box::new({
-                let tester = Rc::clone(&testers[1]);
-                let params = &params;
-                move || {
-                    nop_loop_example(&mut *tester.borrow_mut(), params);
-                }
-            }),
-        ),
-        (
-            "JustLoopExample Test",
-            Box::new({
-                let tester = Rc::clone(&testers[2]);
-                let params = &params;
-                move || {
-                    just_loop_example(&mut *tester.borrow_mut(), params);
-                }
-            }),
-        ),
-        (
-            "DecLoopExample Test",
-            Box::new({
-                let tester = Rc::clone(&testers[3]);
-                let params = &params;
-                move || {
-                    dec_loop_example(&mut *tester.borrow_mut(), params);
-                }
-            }),
-        ),
-    ];
-
     loop {
-        for (test_name, test_function) in test_functions.iter_mut() {
-            println!("\n----- {} -----", test_name);
-            test_function();
+        for ft in &functions {
+            println!("\n----- {} -----", ft.name);
+            (ft.function)(
+                &mut ft.tester.borrow_mut(),
+                &params,
+            );
         }
     }
 }

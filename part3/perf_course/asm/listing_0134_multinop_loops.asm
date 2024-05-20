@@ -24,17 +24,6 @@ loop2:
     add    x8, x8, #0x1
     cmp    x8, x0
     b.lo   loop2
-    b.lo   loop2
-    b.lo   loop2
-    b.lo   loop2
-    b.lo   loop2
-    b.lo   loop2
-    b.lo   loop2
-    b.lo   loop2
-    b.lo   loop2
-    b.lo   loop2
-    b.lo   loop2
-    b.lo   loop2
     ret
 
 
