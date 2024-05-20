@@ -23,7 +23,7 @@ as -arch arm64 -o "../${base_name}.o" "$filename"
 
 # Check if the assembly was successful
 if [ $? -ne 0 ]; then
-  echo "NASM assembly failed"
+  echo "AS assembly failed"
   exit 1
 fi
 
