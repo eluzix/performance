@@ -5,15 +5,12 @@
   </component>
   <component name="CargoProjects">
     <cargoProject FILE="$PROJECT_DIR$/../part2/rust-parser/Cargo.toml" />
+    <cargoProject FILE="$PROJECT_DIR$/../part3/perf_course/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
     <list default="true" id="419335f9-b5ce-401c-b47b-b89bc56d9257" name="Changes" comment="full circle back to mach_absolute_time">
-      <change afterPath="$PROJECT_DIR$/../part2/rust-parser/src/listing_0102_read_overhead_test.rs" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../part2/rust-parser/src/repetition_tester.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/json_parser.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/json_parser.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/naive_profiler.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/naive_profiler.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/ruff.xml" beforeDir="false" />
+      <change afterPath="$PROJECT_DIR$/../part3/perf_course/asm/listing_0150_read_widths.asm" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/../part3/perf_course/src/bin/listing_0151_read_widths_main.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -50,32 +47,32 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "Cargo.Run rust-parser.executor": "Debug",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "RunOnceActivity.go.formatter.settings.were.checked": "true",
-    "RunOnceActivity.go.migrated.go.modules.settings": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "git-widget-placeholder": "main",
-    "go.import.settings.migrated": "true",
-    "kotlin-language-version-configured": "true",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "nodejs_package_manager_path": "npm",
-    "org.rust.cargo.project.model.PROJECT_DISCOVERY": "true",
-    "org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon": "",
-    "org.rust.first.attach.projects": "true",
-    "project.structure.last.edited": "Modules",
-    "project.structure.proportion": "0.0",
-    "project.structure.side.proportion": "0.0",
-    "settings.editor.selected.configurable": "language.rust.cargo.check",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;Cargo.Run rust-parser.executor&quot;: &quot;Debug&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.formatter.settings.were.checked&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.go.migrated.go.modules.settings&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;git-widget-placeholder&quot;: &quot;main&quot;,
+    &quot;go.import.settings.migrated&quot;: &quot;true&quot;,
+    &quot;kotlin-language-version-configured&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;nodejs_package_manager_path&quot;: &quot;npm&quot;,
+    &quot;org.rust.cargo.project.model.PROJECT_DISCOVERY&quot;: &quot;true&quot;,
+    &quot;org.rust.cargo.project.model.impl.CargoExternalSystemProjectAware.subscribe.first.balloon&quot;: &quot;&quot;,
+    &quot;org.rust.first.attach.projects&quot;: &quot;true&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Modules&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.0&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.0&quot;,
+    &quot;settings.editor.selected.configurable&quot;: &quot;language.rust.cargo.check&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="MoveFile.RECENT_KEYS">
       <recent name="$PROJECT_DIR$/../part2/rust-parser/src" />
@@ -129,7 +126,6 @@
     <recent_temporary>
       <list>
         <item itemvalue="Cargo.Run rust-parser" />
-        <item itemvalue="Python.instruction_decoder" />
       </list>
     </recent_temporary>
   </component>
@@ -139,8 +135,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9f38398b9061-18abd8497189-intellij.indexing.shared.core-IU-241.14494.240" />
-        <option value="bundled-js-predefined-1d06a55b98c1-74d2a5396914-JavaScript-IU-241.14494.240" />
+        <option value="bundled-jdk-9f38398b9061-39b83d9b5494-intellij.indexing.shared.core-IU-241.15989.150" />
+        <option value="bundled-js-predefined-1d06a55b98c1-91d5c284f522-JavaScript-IU-241.15989.150" />
       </set>
     </attachedChunks>
   </component>
@@ -171,7 +167,10 @@
       <workItem from="1713509026311" duration="1208000" />
       <workItem from="1715144212552" duration="14756000" />
       <workItem from="1715163581144" duration="17509000" />
-      <workItem from="1715255972415" duration="14676000" />
+      <workItem from="1715255972415" duration="16744000" />
+      <workItem from="1715752767501" duration="8000" />
+      <workItem from="1716402918315" duration="263000" />
+      <workItem from="1716403212047" duration="3610000" />
     </task>
     <task id="LOCAL-00001" summary="json parser">
       <option name="closed" value="true" />
@@ -252,8 +251,8 @@
   <component name="XDebuggerManager">
     <watches-manager>
       <configuration name="PythonConfigurationType">
-        <watch expression="instruction[0]" language="Python" />
-        <watch expression="instruction[1]" language="Python" />
+        <watch expression="instruction[0]" />
+        <watch expression="instruction[1]" />
       </configuration>
     </watches-manager>
   </component>
