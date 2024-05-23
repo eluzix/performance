@@ -8,9 +8,11 @@
     <cargoProject FILE="$PROJECT_DIR$/../part3/perf_course/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="419335f9-b5ce-401c-b47b-b89bc56d9257" name="Changes" comment="full circle back to mach_absolute_time">
-      <change afterPath="$PROJECT_DIR$/../part3/perf_course/asm/listing_0150_read_widths.asm" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/../part3/perf_course/src/bin/listing_0151_read_widths_main.rs" afterDir="false" />
+    <list default="true" id="419335f9-b5ce-401c-b47b-b89bc56d9257" name="Changes" comment="SIMD reads - read port test">
+      <change afterPath="$PROJECT_DIR$/../part3/perf_course/src/bin/listing_0119_overfaulting_pages_main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/listing_0112_os_fault_counter_main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/listing_0112_os_fault_counter_main.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/perf_metrics.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/perf_metrics.rs" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/../part3/perf_course/src/perf_metrics.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part3/perf_course/src/perf_metrics.rs" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -170,7 +172,10 @@
       <workItem from="1715255972415" duration="16744000" />
       <workItem from="1715752767501" duration="8000" />
       <workItem from="1716402918315" duration="263000" />
-      <workItem from="1716403212047" duration="3610000" />
+      <workItem from="1716403212047" duration="4780000" />
+      <workItem from="1716452396775" duration="27000" />
+      <workItem from="1716458310959" duration="1384000" />
+      <workItem from="1716461055204" duration="4502000" />
     </task>
     <task id="LOCAL-00001" summary="json parser">
       <option name="closed" value="true" />
@@ -228,7 +233,23 @@
       <option name="project" value="LOCAL" />
       <updated>1715192273172</updated>
     </task>
-    <option name="localTasksCounter" value="8" />
+    <task id="LOCAL-00008" summary="SIMD reads">
+      <option name="closed" value="true" />
+      <created>1716406988414</created>
+      <option name="number" value="00008" />
+      <option name="presentableId" value="LOCAL-00008" />
+      <option name="project" value="LOCAL" />
+      <updated>1716406988414</updated>
+    </task>
+    <task id="LOCAL-00009" summary="SIMD reads - read port test">
+      <option name="closed" value="true" />
+      <created>1716439622740</created>
+      <option name="number" value="00009" />
+      <option name="presentableId" value="LOCAL-00009" />
+      <option name="project" value="LOCAL" />
+      <updated>1716439622740</updated>
+    </task>
+    <option name="localTasksCounter" value="10" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -242,13 +263,24 @@
     <MESSAGE value="TimePoint duration" />
     <MESSAGE value="new profiler" />
     <MESSAGE value="full circle back to mach_absolute_time" />
-    <option name="LAST_COMMIT_MESSAGE" value="full circle back to mach_absolute_time" />
+    <MESSAGE value="SIMD reads" />
+    <MESSAGE value="SIMD reads - read port test" />
+    <option name="LAST_COMMIT_MESSAGE" value="SIMD reads - read port test" />
   </component>
   <component name="VgoProject">
     <integration-enabled>false</integration-enabled>
     <settings-migrated>true</settings-migrated>
   </component>
   <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="com.jetbrains.cidr.execution.debugger.OCBreakpointType">
+          <url>file://$PROJECT_DIR$/../part2/rust-parser/src/perf_metrics.rs</url>
+          <line>127</line>
+          <option name="timeStamp" value="1" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
     <watches-manager>
       <configuration name="PythonConfigurationType">
         <watch expression="instruction[0]" />

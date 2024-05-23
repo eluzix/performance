@@ -39,12 +39,11 @@ pub fn run() {
         let end_faults = get_page_faults(pid);
         let fault_count = end_faults - start_faults;
 
+        println!("{}, {}, {}, {}", page_count, touch_count, fault_count, fault_count - touch_count as i32);
         if fault_count > 0 {
             let vaddr = VirtualAddress::from_pointer(addr as usize + touch_size);
             vaddr.print();
         }
-
-        println!("{}, {}, {}, {}", page_count, touch_count, fault_count, fault_count - touch_count as i32);
 
         let result = unsafe {
             munmap(addr, total_size)

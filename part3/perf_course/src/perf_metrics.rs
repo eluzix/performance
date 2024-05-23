@@ -119,11 +119,11 @@ pub struct VirtualAddress {
 impl VirtualAddress {
     pub fn from_pointer(pointer: usize) -> Self {
         VirtualAddress {
-            l1_index: ((pointer >> 39) & 0x1FF) as u16,
-            l2_index: ((pointer >> 30) & 0x1FF) as u16,
-            l3_index: ((pointer >> 21) & 0x1FF) as u16,
-            l4_index: ((pointer >> 12) & 0x1FF) as u16,
-            offset: (pointer & 0xFFF) as u16,
+            l1_index: ((pointer >> 48) & 0x1) as u16,
+            l2_index: ((pointer >> 37) & 0x7FF) as u16,
+            l3_index: ((pointer >> 26) & 0x7FF) as u16,
+            l4_index: ((pointer >> 15) & 0x7FF) as u16,
+            offset: (pointer & 0x3FFF) as u16,
         }
     }
 
@@ -135,5 +135,15 @@ impl VirtualAddress {
                  self.l4_index,
                  self.offset
         );
+    }
+
+    pub fn format(&self) -> String {
+        format!("{} | {} | {} | {} | {}",
+                 self.l1_index,
+                 self.l2_index,
+                 self.l3_index,
+                 self.l4_index,
+                 self.offset
+        )
     }
 }
