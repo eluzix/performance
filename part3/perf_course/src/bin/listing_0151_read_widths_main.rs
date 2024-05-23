@@ -12,7 +12,10 @@ use perf_course::repetition_tester::repetition_tester::RepetitionTester;
 extern "C" {
     fn Read_4x3(count: u64, data: *mut u8);
     fn Read_8x3(count: u64, data: *mut u8);
+    fn Read_16x1(count: u64, data: *mut u8);
+    fn Read_16x2(count: u64, data: *mut u8);
     fn Read_16x3(count: u64, data: *mut u8);
+    fn Read_16x4(count: u64, data: *mut u8);
     fn Read_32x3(count: u64, data: *mut u8);
     fn Read_64x3(count: u64, data: *mut u8);
     fn Read_128x3(count: u64, data: *mut u8);
@@ -45,41 +48,56 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let mut functions = vec![
-        TesterFunction {
-            name: "Read_4x3",
-            function: Read_4x3,
-            tester: Rc::new(RefCell::new(RepetitionTester::new())),
-        },
+        // TesterFunction {
+        //     name: "Read_4x3",
+        //     function: Read_4x3,
+        //     tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        // },
+
+        // TesterFunction {
+        //     name: "Read_8x3",
+        //     function: Read_8x3,
+        //     tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        // },
 
         TesterFunction {
-            name: "Read_8x3",
-            function: Read_8x3,
+            name: "Read_16x1",
+            function: Read_16x1,
             tester: Rc::new(RefCell::new(RepetitionTester::new())),
         },
-
+        TesterFunction {
+            name: "Read_16x2",
+            function: Read_16x2,
+            tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        },
         TesterFunction {
             name: "Read_16x3",
             function: Read_16x3,
             tester: Rc::new(RefCell::new(RepetitionTester::new())),
         },
-
         TesterFunction {
-            name: "Read_32x3",
-            function: Read_32x3,
+            name: "Read_16x4",
+            function: Read_16x4,
             tester: Rc::new(RefCell::new(RepetitionTester::new())),
         },
 
-        TesterFunction {
-            name: "Read_64x3",
-            function: Read_64x3,
-            tester: Rc::new(RefCell::new(RepetitionTester::new())),
-        },
-
-        TesterFunction {
-            name: "Read_128x3",
-            function: Read_128x3,
-            tester: Rc::new(RefCell::new(RepetitionTester::new())),
-        },
+        // TesterFunction {
+        //     name: "Read_32x3",
+        //     function: Read_32x3,
+        //     tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        // },
+        //
+        // TesterFunction {
+        //     name: "Read_64x3",
+        //     function: Read_64x3,
+        //     tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        // },
+        //
+        // TesterFunction {
+        //     name: "Read_128x3",
+        //     function: Read_128x3,
+        //     tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        // },
     ];
 
     let params = TestParams {

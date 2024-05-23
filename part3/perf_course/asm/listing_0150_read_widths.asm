@@ -1,7 +1,10 @@
 .text
 .global _Read_4x3
 .global _Read_8x3
+.global _Read_16x1
+.global _Read_16x2
 .global _Read_16x3
+.global _Read_16x4
 .global _Read_32x3
 .global _Read_64x3
 .global _Read_128x3
@@ -24,13 +27,38 @@ loop2:
     bhi loop2
     ret
 
-_Read_16x3:
+_Read_16x1:
 loop6:
+    LDR H0, [X1]
+    subs x0, x0, 16
+    bhi loop6
+    ret
+
+_Read_16x2:
+loop7:
+    LDR H0, [X1]
+    LDR H0, [X1, #16]
+    subs x0, x0, 32
+    bhi loop7
+    ret
+
+_Read_16x3:
+loop8:
     LDR H0, [X1]
     LDR H0, [X1, #16]
     LDR H0, [X1, #32]
     subs x0, x0, 48
-    bhi loop6
+    bhi loop8
+    ret
+
+_Read_16x4:
+loop9:
+    LDR H0, [X1]
+    LDR H0, [X1, #16]
+    LDR H0, [X1, #32]
+    LDR H0, [X1, #48]
+    subs x0, x0, 64
+    bhi loop9
     ret
 
 _Read_32x3:
