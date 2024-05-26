@@ -10,15 +10,7 @@ use libc::{mmap, size_t, MAP_ANON, MAP_PRIVATE, PROT_READ, PROT_WRITE};
 use perf_course::repetition_tester::repetition_tester::RepetitionTester;
 
 extern "C" {
-    fn Read_4x3(count: u64, data: *mut u8);
-    fn Read_8x3(count: u64, data: *mut u8);
-    fn Read_16x1(count: u64, data: *mut u8);
-    fn Read_16x2(count: u64, data: *mut u8);
-    fn Read_16x3(count: u64, data: *mut u8);
-    fn Read_16x4(count: u64, data: *mut u8);
-    fn Read_32x3(count: u64, data: *mut u8);
-    fn Read_64x3(count: u64, data: *mut u8);
-    fn Read_128x3(count: u64, data: *mut u8);
+    fn ReadBufferTest(count: u64, data: *mut u8, mask: u64);
 }
 
 struct TestParams {
@@ -29,7 +21,8 @@ struct TestParams {
 
 struct TesterFunction {
     name: &'static str,
-    function: unsafe extern "C" fn(count: u64, data: *mut u8),
+    mask: u64,
+    function: unsafe extern "C" fn(count: u64, data: *mut u8, mask: u64),
     tester: Rc<RefCell<RepetitionTester>>,
 }
 
@@ -47,54 +40,60 @@ fn main() -> Result<(), Box<dyn Error>> {
     };
 
     let mut functions = vec![
-        // TesterFunction {
-        //     name: "Read_4x3",
-        //     function: Read_4x3,
-        //     tester: Rc::new(RefCell::new(RepetitionTester::new())),
-        // },
-
-        // TesterFunction {
-        //     name: "Read_8x3",
-        //     function: Read_8x3,
-        //     tester: Rc::new(RefCell::new(RepetitionTester::new())),
-        // },
         TesterFunction {
-            name: "Read_16x1",
-            function: Read_16x1,
+            name: "Mask 16Kb",
+            mask: 0b0111111111111111,
+            function: ReadBufferTest,
             tester: Rc::new(RefCell::new(RepetitionTester::new())),
         },
         TesterFunction {
-            name: "Read_16x2",
-            function: Read_16x2,
+            name: "Mask 32Kb",
+            mask: 0b1111111111111111,
+            function: ReadBufferTest,
             tester: Rc::new(RefCell::new(RepetitionTester::new())),
         },
         TesterFunction {
-            name: "Read_16x3",
-            function: Read_16x3,
+            name: "Mask 64Kb",
+            mask: 0b11111111111111111,
+            function: ReadBufferTest,
             tester: Rc::new(RefCell::new(RepetitionTester::new())),
         },
         TesterFunction {
-            name: "Read_16x4",
-            function: Read_16x4,
+            name: "Mask 128Kb",
+            mask: 0b111111111111111111,
+            function: ReadBufferTest,
             tester: Rc::new(RefCell::new(RepetitionTester::new())),
         },
-        // TesterFunction {
-        //     name: "Read_32x3",
-        //     function: Read_32x3,
-        //     tester: Rc::new(RefCell::new(RepetitionTester::new())),
-        // },
-        //
-        // TesterFunction {
-        //     name: "Read_64x3",
-        //     function: Read_64x3,
-        //     tester: Rc::new(RefCell::new(RepetitionTester::new())),
-        // },
-        //
-        // TesterFunction {
-        //     name: "Read_128x3",
-        //     function: Read_128x3,
-        //     tester: Rc::new(RefCell::new(RepetitionTester::new())),
-        // },
+        TesterFunction {
+            name: "Mask 256Kb",
+            mask: 0b1111111111111111111,
+            function: ReadBufferTest,
+            tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        },
+        TesterFunction {
+            name: "Mask 512Kb",
+            mask: 0b11111111111111111111,
+            function: ReadBufferTest,
+            tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        },
+        TesterFunction {
+            name: "Mask 1Mb",
+            mask: 0b111111111111111111111,
+            function: ReadBufferTest,
+            tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        },
+        TesterFunction {
+            name: "Mask 2Mb",
+            mask: 0b1111111111111111111111,
+            function: ReadBufferTest,
+            tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        },
+        TesterFunction {
+            name: "Mask 4Mb",
+            mask: 0b11111111111111111111111,
+            function: ReadBufferTest,
+            tester: Rc::new(RefCell::new(RepetitionTester::new())),
+        },
     ];
 
     let params = TestParams {
@@ -103,18 +102,24 @@ fn main() -> Result<(), Box<dyn Error>> {
         buffer: addr as *mut u8,
     };
 
+    let buffer = unsafe { std::slice::from_raw_parts_mut(addr as *mut u8, total_size) };
+    // unsafe {
+    //     for i in 0..total_size {
+    //         buffer[i] = i as u8;
+    //     }
+    // }
+
     loop {
         for ft in &functions {
             println!("\n----- {} -----", ft.name);
             let mut tester = ft.tester.borrow_mut();
             tester.start_test_wave(params.seconds_to_try, params.expected_bytes);
             let total_size = params.expected_bytes as size_t;
-            let buffer = unsafe { std::slice::from_raw_parts_mut(addr, total_size) };
             while tester.is_testing() {
                 let mut i = 0;
                 tester.begin_time();
                 unsafe {
-                    (ft.function)(total_size as u64, buffer.as_mut_ptr() as *mut u8);
+                    (ft.function)(total_size as u64, buffer.as_mut_ptr() as *mut u8, ft.mask);
                 }
                 tester.end_time();
                 tester.count_bytes(total_size as u64);
