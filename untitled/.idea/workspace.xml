@@ -8,11 +8,7 @@
     <cargoProject FILE="$PROJECT_DIR$/../part3/perf_course/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="419335f9-b5ce-401c-b47b-b89bc56d9257" name="Changes" comment="SIMD reads - read port test">
-      <change afterPath="$PROJECT_DIR$/../part3/perf_course/src/bin/listing_0119_overfaulting_pages_main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/listing_0112_os_fault_counter_main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/listing_0112_os_fault_counter_main.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../part2/rust-parser/src/perf_metrics.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part2/rust-parser/src/perf_metrics.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/../part3/perf_course/src/perf_metrics.rs" beforeDir="false" afterPath="$PROJECT_DIR$/../part3/perf_course/src/perf_metrics.rs" afterDir="false" />
+    <list default="true" id="419335f9-b5ce-401c-b47b-b89bc56d9257" name="Changes" comment="over faulting page count">
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
@@ -137,8 +133,8 @@
   <component name="SharedIndexes">
     <attachedChunks>
       <set>
-        <option value="bundled-jdk-9f38398b9061-39b83d9b5494-intellij.indexing.shared.core-IU-241.15989.150" />
-        <option value="bundled-js-predefined-1d06a55b98c1-91d5c284f522-JavaScript-IU-241.15989.150" />
+        <option value="bundled-jdk-9f38398b9061-39b83d9b5494-intellij.indexing.shared.core-IU-241.17011.79" />
+        <option value="bundled-js-predefined-1d06a55b98c1-0b3e54e931b4-JavaScript-IU-241.17011.79" />
       </set>
     </attachedChunks>
   </component>
@@ -175,7 +171,8 @@
       <workItem from="1716403212047" duration="4780000" />
       <workItem from="1716452396775" duration="27000" />
       <workItem from="1716458310959" duration="1384000" />
-      <workItem from="1716461055204" duration="4502000" />
+      <workItem from="1716461055204" duration="6455000" />
+      <workItem from="1716797697152" duration="820000" />
     </task>
     <task id="LOCAL-00001" summary="json parser">
       <option name="closed" value="true" />
@@ -249,7 +246,15 @@
       <option name="project" value="LOCAL" />
       <updated>1716439622740</updated>
     </task>
-    <option name="localTasksCounter" value="10" />
+    <task id="LOCAL-00010" summary="over faulting page count">
+      <option name="closed" value="true" />
+      <created>1716467933831</created>
+      <option name="number" value="00010" />
+      <option name="presentableId" value="LOCAL-00010" />
+      <option name="project" value="LOCAL" />
+      <updated>1716467933831</updated>
+    </task>
+    <option name="localTasksCounter" value="11" />
     <servers />
   </component>
   <component name="TypeScriptGeneratedFilesManager">
@@ -265,7 +270,8 @@
     <MESSAGE value="full circle back to mach_absolute_time" />
     <MESSAGE value="SIMD reads" />
     <MESSAGE value="SIMD reads - read port test" />
-    <option name="LAST_COMMIT_MESSAGE" value="SIMD reads - read port test" />
+    <MESSAGE value="over faulting page count" />
+    <option name="LAST_COMMIT_MESSAGE" value="over faulting page count" />
   </component>
   <component name="VgoProject">
     <integration-enabled>false</integration-enabled>
