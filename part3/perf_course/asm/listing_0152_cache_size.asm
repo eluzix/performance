@@ -1,5 +1,6 @@
 .text
 .global _ReadBufferTest
+.global _ReadBufferDoubleLoopTest
 
 _ReadBufferTest:
     eor x5, x5, x5
@@ -24,4 +25,33 @@ loop:
 ;    subs x0, x0,  1536 ; the main loop counter
     subs x0, x0,  768 ; the main loop counter
     bhi loop
+    ret
+
+
+; Parameters:
+; x0 - the number of iterations
+; x1 - the buffer address
+; x2 - inner loop run count
+;
+; Tmp registers:
+; x5 - being reset to x2 at the beginning of the outer loop
+
+_ReadBufferDoubleLoopTest:
+outter_loop:
+    mov x5, x2
+    mov x4, x1
+
+    inner_loop:
+        ldr Q0, [x4]
+        ldr Q0, [x4, #128]
+        ldr Q0, [x4, #256]
+        ldr Q0, [x4, #384]
+        ldr Q0, [x4, #512]
+        ldr Q0, [x4, #640]
+        adds x4, x4, 768
+        subs x5, x5, 768
+        bhi inner_loop
+
+    subs x0, x0, 1
+    bhi outter_loop
     ret
