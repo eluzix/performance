@@ -141,7 +141,7 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
     let mut reader = BufReader::new(f);
 
     // const BUFFER_SIZE: usize = 8096;
-    const BUFFER_SIZE: usize = 8096 * 1024;
+    const BUFFER_SIZE: usize = 1024 * 1024 * 4;
     let mut buffer = [0_u8; BUFFER_SIZE];
     let mut json_array = JsonArray {
         objects: Vec::new(),
