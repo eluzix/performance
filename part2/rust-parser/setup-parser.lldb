@@ -1,0 +1,6 @@
+# target stop-hook add --one-liner "disassemble --frame"
+target stop-hook add --one-liner "di"
+# target stop-hook add --one-liner "register read x8 x9 x29 sp"
+b json_parser.rs:140
+r
+# run ./target/debug/rust-parser parse run haversine_data.json

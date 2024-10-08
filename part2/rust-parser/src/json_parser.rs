@@ -117,10 +117,7 @@ impl ParsingData {
             return;
         }
 
-        let val = self
-            .val
-            .parse::<f64>()
-            .unwrap_or_else(|_| panic!("Error: Could not parse '{}' into a f64.", self.val));
+        let val = self.val.parse::<f64>().unwrap();
         self.obj.set_val(self.key.as_str(), val);
         self.key.clear();
         self.val.clear();
@@ -138,13 +135,16 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
     let init_start = naive_profiler::start_span("Init");
 
     let f = File::open(input_file)?;
+    let file_size = f.metadata().unwrap().len();
+    println!("File size: {}", file_size);
     let mut reader = BufReader::new(f);
 
     // const BUFFER_SIZE: usize = 8096;
     const BUFFER_SIZE: usize = 1024 * 1024 * 4;
     let mut buffer = [0_u8; BUFFER_SIZE];
     let mut json_array = JsonArray {
-        objects: Vec::new(),
+        // objects: Vec::new(),
+        objects: Vec::with_capacity(10000000),
     };
     let mut array_found = false;
 
@@ -161,9 +161,9 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
             break;
         }
 
+        let start = naive_profiler::start_span("Loop");
         let string_slice = std::str::from_utf8(&buffer[..count])?;
 
-        let start = naive_profiler::start_span("Loop");
         for char in string_slice.chars() {
             if !array_found {
                 if char == '[' {
@@ -181,11 +181,14 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
                 }
                 '}' => {
                     // Do something
+                    let start_update = naive_profiler::start_span("Update");
                     parse_data.update_obj();
                     json_array.objects.push(parse_data.obj.clone());
                     parse_data.reset();
+                    naive_profiler::stop_span(start_update, 0);
                 }
                 '"' => {
+                    let state_update = naive_profiler::start_span("State");
                     if parse_data.key.len() == 0 {
                         parse_data.state = State::Key;
                     } else if parse_data.state == State::Key {
@@ -194,6 +197,7 @@ pub fn parse(input_file: &str, validate: bool) -> Result<(), Box<dyn Error>> {
                         parse_data.state = State::Key;
                         parse_data.update_obj();
                     }
+                    naive_profiler::stop_span(state_update, 0);
                 }
 
                 _ => {
