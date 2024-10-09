@@ -13,7 +13,7 @@ fn randomInRane(rng: *std.rand.DefaultPrng, x0: *[2]f64, y0: *[2]f64, x1: *[2]f6
     rnd[3] = randomFloatInRange(rng, y0[0], y1[1]);
 }
 
-fn generateJson(allocator: std.mem.Allocator, count: usize, seed: u64, inputFileName: []u8) !void {
+pub fn generateJson(allocator: std.mem.Allocator, count: usize, seed: u64, inputFileName: []u8) !void {
     var prng = std.rand.DefaultPrng.init(seed);
     var ranges = [_][2]f64{
         [_]f64{ -180.0, 180.0 },
@@ -57,24 +57,4 @@ fn generateJson(allocator: std.mem.Allocator, count: usize, seed: u64, inputFile
     std.debug.print("Generated {d} points\n", .{count});
     std.debug.print("Seed: {d}\n", .{seed});
     std.debug.print("Total distance: {d}\n", .{total});
-}
-
-pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
-
-    const args = try std.process.argsAlloc(allocator);
-    if (args.len < 3) {
-        std.debug.print("Usage: {s} generate|parse|run <file|listing>", .{args[0]});
-        std.process.exit(1);
-    }
-
-    if (std.mem.eql(u8, args[1], "generate")) {
-        var seed: u64 = undefined;
-        try std.posix.getrandom(std.mem.asBytes(&seed));
-        try generateJson(allocator, 100.0, seed, args[2]);
-    } else {
-        std.debug.print("Usage: {s} generate|parse|run <file|listing>", .{args[0]});
-        std.process.exit(1);
-    }
 }
