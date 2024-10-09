@@ -6,7 +6,6 @@ fn randomFloatInRange(rng: *std.rand.DefaultPrng, min: f64, max: f64) f64 {
     return min + random_value * (max - min);
 }
 
-// fn randomInRane(x0: *[2]f64, y0: *[2]f64, x1: *[2]f64, y1: *[2]f64) (f64, f64, f64, f64) {
 fn randomInRane(rng: *std.rand.DefaultPrng, x0: *[2]f64, y0: *[2]f64, x1: *[2]f64, y1: *[2]f64, rnd: *[4]f64) void {
     rnd[0] = randomFloatInRange(rng, x0[0], x0[1]);
     rnd[1] = randomFloatInRange(rng, y0[0], y0[1]);
@@ -14,13 +13,8 @@ fn randomInRane(rng: *std.rand.DefaultPrng, x0: *[2]f64, y0: *[2]f64, x1: *[2]f6
     rnd[3] = randomFloatInRange(rng, y0[0], y1[1]);
 }
 
-fn generateJson(count: usize) !void {
-    var prng = std.rand.DefaultPrng.init(blk: {
-        var seed: u64 = undefined;
-        try std.posix.getrandom(std.mem.asBytes(&seed));
-        break :blk seed;
-    });
-
+fn generateJson(allocator: std.mem.Allocator, count: usize, seed: u64, inputFileName: []u8) !void {
+    var prng = std.rand.DefaultPrng.init(seed);
     var ranges = [_][2]f64{
         [_]f64{ -180.0, 180.0 },
         [_]f64{ -90.0, 90.0 },
@@ -29,45 +23,58 @@ fn generateJson(count: usize) !void {
     };
     var rnd = [_]f64{ 0.0, 0.0, 0.0, 0.0 };
 
+    const fileName = try std.fmt.allocPrint(allocator, "{s}.json", .{inputFileName});
     const cwd = std.fs.cwd();
-    var file = try cwd.createFile("haversine.json", .{ .truncate = true });
+    var file = try cwd.createFile(fileName, .{ .truncate = true });
     defer file.close();
     const writer = file.writer();
     try writer.writeAll("{\"pairs\": [\n");
 
+    const binFileName = try std.fmt.allocPrint(allocator, "{s}.bin", .{fileName});
+    var binFile = try cwd.createFile(binFileName, .{ .truncate = true });
+    defer binFile.close();
+    // const binWriter = binFileName.writer();
+
+    const fcount: f64 = @floatFromInt(count);
+    const coefficient: f64 = 1.0 / fcount;
+
+    var total: f64 = 0.0;
     for (0..count) |_| {
         randomInRane(&prng, &ranges[0], &ranges[1], &ranges[2], &ranges[3], &rnd);
+        const distance = haversine.referenceHaversine(rnd[0], rnd[1], rnd[2], rnd[3]);
+
         try std.fmt.format(writer, "{{\"x0\":{},\"y0\":{},\"x1\":{},\"y1\":{}}}\n", .{ rnd[0], rnd[1], rnd[2], rnd[3] });
+        const bytes: [8]u8 = @bitCast(distance);
+        try binFile.writeAll(bytes[0..]);
+
+        total += distance * coefficient;
     }
+    const bytes: [8]u8 = @bitCast(total);
+    try binFile.writeAll(bytes[0..]);
+
     try writer.writeAll("]}\n");
 
-    const min: f64 = 1.0;
-    const max: f64 = 90.0;
-    const random_float = randomFloatInRange(&prng, min, max);
-    std.debug.print("Random float: {d:.5}\n", .{random_float});
+    std.debug.print("Generated {d} points\n", .{count});
+    std.debug.print("Seed: {d}\n", .{seed});
+    std.debug.print("Total distance: {d}\n", .{total});
 }
 
 pub fn main() !void {
-    const c = haversine.referenceHaversine(0, 0, 90, -90);
-    // Prints to stderr (it's a shortcut based on `std.io.getStdErr()`)
-    std.debug.print("All your {} are belong to us.\n", .{c});
+    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    const allocator = gpa.allocator();
 
-    try generateJson(100.0);
+    const args = try std.process.argsAlloc(allocator);
+    if (args.len < 3) {
+        std.debug.print("Usage: {s} generate|parse|run <file|listing>", .{args[0]});
+        std.process.exit(1);
+    }
 
-    // // stdout is for the actual output of your application, for example if you
-    // // are implementing gzip, then only the compressed bytes should be sent to
-    // // stdout, not any debugging messages.
-    // const stdout_file = std.io.getStdOut().writer();
-    // var bw = std.io.bufferedWriter(stdout_file);
-    // const stdout = bw.writer();
-    // try stdout.print("Run `zig build test` to run the tests.\n", .{});
-    //
-    // try bw.flush(); // don't forget to flush!
-}
-
-test "simple test" {
-    var list = std.ArrayList(i32).init(std.testing.allocator);
-    defer list.deinit(); // try commenting this out and see if zig detects the memory leak!
-    try list.append(42);
-    try std.testing.expectEqual(@as(i32, 42), list.pop());
+    if (std.mem.eql(u8, args[1], "generate")) {
+        var seed: u64 = undefined;
+        try std.posix.getrandom(std.mem.asBytes(&seed));
+        try generateJson(allocator, 100.0, seed, args[2]);
+    } else {
+        std.debug.print("Usage: {s} generate|parse|run <file|listing>", .{args[0]});
+        std.process.exit(1);
+    }
 }
