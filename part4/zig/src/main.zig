@@ -1,5 +1,6 @@
 const std = @import("std");
 const generator = @import("json-generator.zig");
+const perf = @import("perf-metrics.zig");
 
 pub fn main() !void {
     var gpa = std.heap.GeneralPurposeAllocator(.{}){};
@@ -26,6 +27,8 @@ pub fn main() !void {
         }
 
         try generator.generateJson(allocator, count, seed, args[2]);
+    } else if (std.mem.eql(u8, args[1], "parse")) {
+        std.debug.print(">>> {d} ---- {d}", .{ perf.highResolutionClock(), perf.highResolutionClock() });
     } else {
         std.debug.print("Usage: {s} generate|parse|run <file|listing>", .{args[0]});
         std.process.exit(1);
