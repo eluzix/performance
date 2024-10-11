@@ -4,10 +4,10 @@ target/
 debug/
 release/
 
+*.json.bin
 haversine_data.json
 haversine.json
-haversine_data.json.bin
-haversine.bin
+
 *.o
 zig-out/
 .zig-cache/
