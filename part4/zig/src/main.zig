@@ -1,5 +1,6 @@
 const std = @import("std");
 const generator = @import("json-generator.zig");
+const parser = @import("json-parser.zig");
 const perf = @import("perf-metrics.zig");
 
 pub fn main() !void {
@@ -28,8 +29,9 @@ pub fn main() !void {
 
         try generator.generateJson(allocator, count, seed, args[2]);
     } else if (std.mem.eql(u8, args[1], "parse")) {
-        std.debug.print(">>> {d} ---- {d}\n", .{ perf.highResolutionClock(), perf.highResolutionClock() });
-        std.debug.print(">>> faults: {d}", .{perf.getPageFaults()});
+        try parser.parseJson(allocator, args[2]);
+        // std.debug.print(">>> {d} ---- {d}\n", .{ perf.highResolutionClock(), perf.highResolutionClock() });
+        // std.debug.print(">>> faults: {d}\n", .{perf.getPageFaults()});
     } else {
         std.debug.print("Usage: {s} generate|parse|run <file|listing>", .{args[0]});
         std.process.exit(1);
