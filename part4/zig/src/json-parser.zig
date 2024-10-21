@@ -1,5 +1,6 @@
 const std = @import("std");
 const mem = std.mem;
+const assert = std.debug.assert;
 const haversine = @import("haversine.zig");
 
 const ParseState = enum {
@@ -28,6 +29,19 @@ const Point = struct {
         }
     }
 };
+
+fn bytesToFloat(bytes: []u8) f64 {
+    return @bitCast(mem.readInt(u64, &[_]u8{
+        bytes[0],
+        bytes[1],
+        bytes[2],
+        bytes[3],
+        bytes[4],
+        bytes[5],
+        bytes[6],
+        bytes[7],
+    }, .little));
+}
 
 pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) !void {
     const readBufferSize: usize = 1024 * 1024 * 4;
@@ -145,32 +159,34 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
 
     if (validate) {
         var total: f64 = 0;
-        const binTotal: []u8 = try allocator.alloc(u8, 8);
-        defer allocator.free(binTotal);
+        const totalBuf: []u8 = try allocator.alloc(u8, 8);
+        defer allocator.free(totalBuf);
 
         const binFileName = try std.fmt.allocPrint(allocator, "{s}.json.bin", .{inputFilename});
         const binFile = try std.fs.cwd().openFile(binFileName, .{});
         defer binFile.close();
 
-        const endPos = try binFile.getEndPos();
-        try binFile.seekTo(endPos - 8);
-        _ = try binFile.read(binTotal);
-        const binValue: f64 = @bitCast(mem.readInt(u64, &[_]u8{
-            binTotal[0],
-            binTotal[1],
-            binTotal[2],
-            binTotal[3],
-            binTotal[4],
-            binTotal[5],
-            binTotal[6],
-            binTotal[7],
-        }, .little));
+        // const endPos = try binFile.getEndPos();
+        // try binFile.seekTo(endPos - 8);
+        const fcount: f64 = @floatFromInt(allPoints.items.len);
+        const coefficient: f64 = 1.0 / fcount;
 
         for (allPoints.items) |p| {
-            total += haversine.referenceHaversine(p.X0, p.Y0, p.X1, p.Y1);
+            const rb = try binFile.read(totalBuf);
+            assert(rb == 8);
+            const binValue: f64 = bytesToFloat(totalBuf);
+
+            const hav = haversine.referenceHaversine(p.X0, p.Y0, p.X1, p.Y1);
+            assert(std.math.approxEqAbs(f64, hav, binValue, 0.00000001));
+
+            total += hav * coefficient;
         }
 
         std.debug.print("Total haversine in points is {d}\n", .{total});
+
+        _ = try binFile.read(totalBuf);
+        const binValue: f64 = bytesToFloat(totalBuf);
         std.debug.print("Total haversine in bin file is {d}\n", .{binValue});
+        assert(std.math.approxEqAbs(f64, total, binValue, 0.00000001));
     }
 }
