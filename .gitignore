@@ -11,3 +11,6 @@ haversine.json
 *.o
 zig-out/
 .zig-cache/
+
+.idea/
+*.iml
