@@ -51,8 +51,8 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8) !void {
             }
 
             switch (chr) {
-                '[' | ']' | ',' | ':' => {},
-                ' ' | '\n' | '\t' => {},
+                '[', ']', ',', ':' => {},
+                ' ', '\n', '\t' => {},
                 '{' => {
                     // std.debug.print("start\n", .{});
                     parser.state = ParseState.start;
@@ -68,8 +68,8 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8) !void {
                 },
                 '"' => {
                     // handle token start/stop
-                    std.debug.print("!!!!!state: {any} :: {any}\n", .{ parser.state, parser.keyLen });
-                    if (parser.keyLen == 0) {
+                    std.debug.print("!!!!!state: {any} :: keyLen: {any}\n", .{ parser.state, parser.keyLen });
+                    if (parser.idx == 0) {
                         parser.state = ParseState.key;
                         parser.idx = 0;
                     } else if (parser.state == ParseState.key) {
