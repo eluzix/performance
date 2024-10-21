@@ -43,7 +43,7 @@ pub fn generateJson(allocator: std.mem.Allocator, count: usize, seed: u64, input
         randomInRane(&prng, &ranges[0], &ranges[1], &ranges[2], &ranges[3], &rnd);
         const distance = haversine.referenceHaversine(rnd[0], rnd[1], rnd[2], rnd[3]);
 
-        try std.fmt.format(writer, "{{\"x0\":{},\"y0\":{},\"x1\":{},\"y1\":{}}}\n", .{ rnd[0], rnd[1], rnd[2], rnd[3] });
+        try std.fmt.format(writer, "{{\"x0\":{d},\"y0\":{d},\"x1\":{d},\"y1\":{d}}}\n", .{ rnd[0], rnd[1], rnd[2], rnd[3] });
         const bytes: [8]u8 = @bitCast(distance);
         try binFile.writeAll(bytes[0..]);
 
