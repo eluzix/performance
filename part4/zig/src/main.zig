@@ -29,7 +29,7 @@ pub fn main() !void {
 
         try generator.generateJson(allocator, count, seed, args[2]);
     } else if (std.mem.eql(u8, args[1], "parse")) {
-        try parser.parseJson(allocator, args[2]);
+        try parser.parseJson(allocator, args[2], true);
         // std.debug.print(">>> {d} ---- {d}\n", .{ perf.highResolutionClock(), perf.highResolutionClock() });
         // std.debug.print(">>> faults: {d}\n", .{perf.getPageFaults()});
     } else {

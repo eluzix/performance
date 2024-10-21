@@ -1,5 +1,6 @@
 const std = @import("std");
 const mem = std.mem;
+const haversine = @import("haversine.zig");
 
 const ParseState = enum {
     reading,
@@ -28,7 +29,7 @@ const Point = struct {
     }
 };
 
-pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8) !void {
+pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) !void {
     const readBufferSize: usize = 1024 * 1024 * 4;
     const readBuffer: []u8 = try allocator.alloc(u8, readBufferSize);
     defer allocator.free(readBuffer);
@@ -57,6 +58,8 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8) !void {
         .X1 = 0.0,
         .Y1 = 0.0,
     };
+    var allPoints = try std.ArrayList(Point).initCapacity(allocator, 100000);
+    defer allPoints.deinit();
 
     while (true) {
         readCount = try file.read(readBuffer);
@@ -89,6 +92,7 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8) !void {
                     const k = parser.key[0..parser.keyLen];
                     const v = parser.value[0..parser.valLen];
                     try point.updateField(k, v);
+                    try allPoints.append(point);
 
                     parser.keyLen = 0;
                     parser.valLen = 0;
@@ -134,6 +138,39 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8) !void {
 
         totalBytes += readCount;
     }
+    _ = allPoints.pop();
 
     std.debug.print("Read total of {d} bytes\n", .{totalBytes});
+    std.debug.print("found total of {d} points\n", .{allPoints.items.len});
+
+    if (validate) {
+        var total: f64 = 0;
+        const binTotal: []u8 = try allocator.alloc(u8, 8);
+        defer allocator.free(binTotal);
+
+        const binFileName = try std.fmt.allocPrint(allocator, "{s}.json.bin", .{inputFilename});
+        const binFile = try std.fs.cwd().openFile(binFileName, .{});
+        defer binFile.close();
+
+        const endPos = try binFile.getEndPos();
+        try binFile.seekTo(endPos - 8);
+        _ = try binFile.read(binTotal);
+        const binValue: f64 = @bitCast(mem.readInt(u64, &[_]u8{
+            binTotal[0],
+            binTotal[1],
+            binTotal[2],
+            binTotal[3],
+            binTotal[4],
+            binTotal[5],
+            binTotal[6],
+            binTotal[7],
+        }, .little));
+
+        for (allPoints.items) |p| {
+            total += haversine.referenceHaversine(p.X0, p.Y0, p.X1, p.Y1);
+        }
+
+        std.debug.print("Total haversine in points is {d}\n", .{total});
+        std.debug.print("Total haversine in bin file is {d}\n", .{binValue});
+    }
 }
