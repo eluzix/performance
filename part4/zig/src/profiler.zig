@@ -42,7 +42,7 @@ pub const Profiler = struct {
     allocator: std.mem.Allocator,
     points: std.ArrayList(TimePoint),
 
-    fn new(allocator: std.mem.Allocator) !Profiler {
+    pub fn new(allocator: std.mem.Allocator) !Profiler {
         return Profiler{
             .startTime = 0,
             .elapsedTime = 0,
@@ -51,51 +51,59 @@ pub const Profiler = struct {
         };
     }
 
-    fn startProfile(self: *Profiler) void {
+    pub fn startProfile(self: *Profiler) void {
         self.startTime = perf.highResolutionClock();
     }
 
-    fn endProfile(self: *Profiler) void {
+    pub fn endProfile(self: *Profiler) void {
         self.elapsedTime = perf.highResolutionClock() - self.startTime;
     }
 
-    fn startSpan(self: *Profiler, label: []const u8) !usize {
-        var point: ?TimePoint = null;
-        var idx: usize = 0;
-        for (self.points.items, 0..) |p, i| {
+    pub fn startSpan(self: *Profiler, label: []const u8) !usize {
+        var idx: ?usize = null;
+        for (self.points.items, 0..) |*p, i| {
             if (mem.eql(u8, p.label, label)) {
-                point = p;
                 idx = i;
                 break;
             }
         }
 
-        if (point == null) {
-            point = TimePoint.new(label);
-            debug.print("START {s} {*}\n", .{ label, &point });
-            try self.points.append(point.?);
+        if (idx == null) {
+            idx = self.points.items.len;
+            try self.points.append(TimePoint.new(label));
         } else {
-            point.?.restart();
+            const point = &self.points.items[idx.?];
+            point.restart();
         }
 
-        return idx;
+        return idx.?;
     }
 
-    fn stopSpan(self: *Profiler, idx: usize, byteProcessed: u64) void {
-        debug.print("END {d} -- {d}\n", .{ idx, byteProcessed });
-        var point = self.points.items[idx];
-        debug.print("END {s} {*}\n", .{ point.label, &point });
+    pub fn stopSpan(self: *Profiler, idx: usize, byteProcessed: u64) void {
+        var point = &self.points.items[idx];
         _ = point.mark(byteProcessed);
     }
 
-    fn report(self: *Profiler) !void {
+    pub fn report(self: *Profiler) !void {
         const timeInfo = perf.timeBaseInfo();
         const totalTime = self.elapsedTime * timeInfo.numer / timeInfo.denom;
 
         for (self.points.items) |point| {
-            const pointTotalTime = point.totalTime + point.childrenTime;
-            const percent = pointTotalTime / totalTime * 100;
-            debug.print("{s} ({*}): {d} ({d} hits, {d})\n", .{ point.label, &point, pointTotalTime, point.hitCount, percent });
+            const pointElapsedTime = point.totalTime + point.childrenTime;
+            const pointTime = pointElapsedTime * timeInfo.numer / timeInfo.denom;
+            const percent = pointTime / totalTime * 100;
+            debug.print("{s}: {d} ({d} hits, {d})", .{ point.label, pointElapsedTime, point.hitCount, percent });
+
+            if (point.byteProcessed > 0) {
+                const fb: f64 = @floatFromInt(point.byteProcessed);
+                const mbProcessed = fb / 1024.0 / 1024.0;
+                const gbProcessed = mbProcessed / 1024.0;
+                const fpt: f64 = @floatFromInt(pointTime);
+                const bandwidth = gbProcessed / (fpt / 1000 / 1000);
+                debug.print(" {d} MB, {d:.6} GB/s", .{ mbProcessed, bandwidth });
+            }
+
+            debug.print("\n", .{});
         }
 
         debug.print("Total time: {s}\n", .{std.fmt.fmtDuration(totalTime)});
@@ -108,13 +116,30 @@ pub fn main() !void {
 
     var profiler = try Profiler.new(allocator);
     profiler.startProfile();
-    const idx = try profiler.startSpan("test");
 
+    var idx = try profiler.startSpan("test");
+    debug.print("IDX 1: {d}\n", .{idx});
     for (0..100000) |_| {
         var tp = TimePoint.new("inside....");
         _ = tp.mark(100);
     }
-    profiler.stopSpan(idx, 1024);
+    profiler.stopSpan(idx, 1024000);
+
+    idx = try profiler.startSpan("test");
+    debug.print("IDX 2: {d}\n", .{idx});
+    for (0..100000) |_| {
+        var tp = TimePoint.new("inside....");
+        _ = tp.mark(100);
+    }
+    profiler.stopSpan(idx, 8192000);
+
+    idx = try profiler.startSpan("XXX");
+    debug.print("IDX 3: {d}\n", .{idx});
+    for (0..100000) |_| {
+        var tp = TimePoint.new("inside....");
+        _ = tp.mark(100);
+    }
+    profiler.stopSpan(idx, 8192000);
 
     profiler.endProfile();
     try profiler.report();

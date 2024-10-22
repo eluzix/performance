@@ -2,6 +2,7 @@ const std = @import("std");
 const mem = std.mem;
 const assert = std.debug.assert;
 const haversine = @import("haversine.zig");
+const profiler = @import("profiler.zig");
 
 const ParseState = enum {
     reading,
@@ -44,6 +45,10 @@ fn bytesToFloat(bytes: []u8) f64 {
 }
 
 pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) !void {
+    var pr = try profiler.Profiler.new(allocator);
+    pr.startProfile();
+
+    var span = try pr.startSpan("init");
     const readBufferSize: usize = 1024 * 1024 * 4;
     const readBuffer: []u8 = try allocator.alloc(u8, readBufferSize);
     defer allocator.free(readBuffer);
@@ -75,6 +80,9 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
     var allPoints = try std.ArrayList(Point).initCapacity(allocator, 100000);
     defer allPoints.deinit();
 
+    pr.stopSpan(span, readBufferSize);
+
+    span = try pr.startSpan("parse");
     while (true) {
         readCount = try file.read(readBuffer);
         if (readCount == 0) {
@@ -153,11 +161,13 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
         totalBytes += readCount;
     }
     _ = allPoints.pop();
+    pr.stopSpan(span, totalBytes);
 
     std.debug.print("Read total of {d} bytes\n", .{totalBytes});
     std.debug.print("found total of {d} points\n", .{allPoints.items.len});
 
     if (validate) {
+        span = try pr.startSpan("validate");
         var total: f64 = 0;
         const totalBuf: []u8 = try allocator.alloc(u8, 8);
         defer allocator.free(totalBuf);
@@ -188,5 +198,9 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
         const binValue: f64 = bytesToFloat(totalBuf);
         std.debug.print("Total haversine in bin file is {d}\n", .{binValue});
         assert(std.math.approxEqAbs(f64, total, binValue, 0.00000001));
+        pr.stopSpan(span, 0);
     }
+
+    pr.endProfile();
+    _ = try pr.report();
 }
