@@ -1,10 +1,20 @@
 const std = @import("std");
 
-pub fn highResolutionClock() u64 {
-    const now = std.c.mach_absolute_time();
+pub const TBInfo = struct { denom: u32, numer: u32 };
+
+pub fn timeBaseInfo() TBInfo {
     var info: std.c.mach_timebase_info_data = undefined;
     const r = std.c.mach_timebase_info(&info);
     if (r != 0) @panic("mach_timebase_info failed");
+    return TBInfo{
+        .denom = info.denom,
+        .numer = info.numer,
+    };
+}
+
+pub fn highResolutionClock() u64 {
+    const now = std.c.mach_absolute_time();
+    const info = timeBaseInfo();
     return (now * info.numer) / info.denom;
 }
 

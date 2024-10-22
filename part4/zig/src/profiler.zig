@@ -1,4 +1,5 @@
 const std = @import("std");
+const mem = std.mem;
 const debug = std.debug;
 const perf = @import("perf-metrics.zig");
 
@@ -23,9 +24,10 @@ pub const TimePoint = struct {
 
     fn mark(self: *TimePoint, byteProcessed: u64) u64 {
         const t = perf.highResolutionClock() - self.startTime;
-        self.totalTime += 1;
+        self.totalTime += t;
         self.hitCount += 1;
         self.byteProcessed += byteProcessed;
+        // debug.print("point.mark {s}: {d}, hits: {d}\n", .{ self.label, t, self.hitCount });
         return t;
     }
 
@@ -56,6 +58,48 @@ pub const Profiler = struct {
     fn endProfile(self: *Profiler) void {
         self.elapsedTime = perf.highResolutionClock() - self.startTime;
     }
+
+    fn startSpan(self: *Profiler, label: []const u8) !usize {
+        var point: ?TimePoint = null;
+        var idx: usize = 0;
+        for (self.points.items, 0..) |p, i| {
+            if (mem.eql(u8, p.label, label)) {
+                point = p;
+                idx = i;
+                break;
+            }
+        }
+
+        if (point == null) {
+            point = TimePoint.new(label);
+            debug.print("START {s} {*}\n", .{ label, &point });
+            try self.points.append(point.?);
+        } else {
+            point.?.restart();
+        }
+
+        return idx;
+    }
+
+    fn stopSpan(self: *Profiler, idx: usize, byteProcessed: u64) void {
+        debug.print("END {d} -- {d}\n", .{ idx, byteProcessed });
+        var point = self.points.items[idx];
+        debug.print("END {s} {*}\n", .{ point.label, &point });
+        _ = point.mark(byteProcessed);
+    }
+
+    fn report(self: *Profiler) !void {
+        const timeInfo = perf.timeBaseInfo();
+        const totalTime = self.elapsedTime * timeInfo.numer / timeInfo.denom;
+
+        for (self.points.items) |point| {
+            const pointTotalTime = point.totalTime + point.childrenTime;
+            const percent = pointTotalTime / totalTime * 100;
+            debug.print("{s} ({*}): {d} ({d} hits, {d})\n", .{ point.label, &point, pointTotalTime, point.hitCount, percent });
+        }
+
+        debug.print("Total time: {s}\n", .{std.fmt.fmtDuration(totalTime)});
+    }
 };
 
 pub fn main() !void {
@@ -64,13 +108,14 @@ pub fn main() !void {
 
     var profiler = try Profiler.new(allocator);
     profiler.startProfile();
-    debug.print(">>>> profiler: {any}\n", .{profiler});
+    const idx = try profiler.startSpan("test");
 
-    var tp = TimePoint.new("test");
-    debug.print(">>>> {any}\n", .{tp});
-    _ = tp.mark(100);
-    debug.print(">>>> {any}\n", .{tp});
+    for (0..100000) |_| {
+        var tp = TimePoint.new("inside....");
+        _ = tp.mark(100);
+    }
+    profiler.stopSpan(idx, 1024);
 
     profiler.endProfile();
-    debug.print(">>>> profiler: {any}\n", .{profiler.elapsedTime});
+    try profiler.report();
 }

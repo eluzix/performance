@@ -9,7 +9,7 @@ pub fn main() !void {
 
     const args = try std.process.argsAlloc(allocator);
     if (args.len < 3) {
-        std.debug.print("Usage: {s} generate|parse|run <file|listing> [generate:count] [generate:seed]", .{args[0]});
+        std.debug.print("Usage: {s} generate|parse|run <file|listing> [generate:count] [generate:seed]\n", .{args[0]});
         std.process.exit(1);
     }
 
@@ -33,7 +33,7 @@ pub fn main() !void {
         // std.debug.print(">>> {d} ---- {d}\n", .{ perf.highResolutionClock(), perf.highResolutionClock() });
         // std.debug.print(">>> faults: {d}\n", .{perf.getPageFaults()});
     } else {
-        std.debug.print("Usage: {s} generate|parse|run <file|listing>", .{args[0]});
+        std.debug.print("Usage: {s} generate|parse|run <file|listing>\n", .{args[0]});
         std.process.exit(1);
     }
 }
