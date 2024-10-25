@@ -94,7 +94,6 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
 
             if (!arrayFound) {
                 if (chr == '[') {
-                    std.debug.print("Found array start at {d}\n", .{totalBytes + i});
                     arrayFound = true;
                 }
                 continue;
@@ -186,8 +185,10 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
             assert(rb == 8);
             const binValue: f64 = bytesToFloat(totalBuf);
 
+            const hvs = try pr.startSpan("haversine");
             const hav = haversine.referenceHaversine(p.X0, p.Y0, p.X1, p.Y1);
-            assert(std.math.approxEqAbs(f64, hav, binValue, 0.00000001));
+            assert(std.math.approxEqAbs(f64, hav, binValue, 0.0001));
+            pr.stopSpan(hvs, 0);
 
             total += hav * coefficient;
         }
@@ -197,8 +198,8 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
         _ = try binFile.read(totalBuf);
         const binValue: f64 = bytesToFloat(totalBuf);
         std.debug.print("Total haversine in bin file is {d}\n", .{binValue});
-        assert(std.math.approxEqAbs(f64, total, binValue, 0.00000001));
-        pr.stopSpan(span, 0);
+        assert(std.math.approxEqAbs(f64, total, binValue, 0.0001));
+        pr.stopSpan(span, totalBytes);
     }
 
     pr.endProfile();

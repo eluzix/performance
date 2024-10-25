@@ -99,14 +99,14 @@ pub const Profiler = struct {
                 const mbProcessed = fb / 1024.0 / 1024.0;
                 const gbProcessed = mbProcessed / 1024.0;
                 const fpt: f64 = @floatFromInt(pointTime);
-                const bandwidth = gbProcessed / (fpt / 1000 / 1000);
-                debug.print(" {d} MB, {d:.6} GB/s", .{ mbProcessed, bandwidth });
+                const bandwidth = gbProcessed / (fpt / 1000 / 1000 / 1000 / 1000);
+                debug.print(" {d:.4} MB, {d:.6} GB/s", .{ mbProcessed, bandwidth });
             }
 
             debug.print("\n", .{});
         }
 
-        debug.print("Total time: {s}\n", .{std.fmt.fmtDuration(totalTime)});
+        debug.print("Total time: {s}\n", .{std.fmt.fmtDuration(totalTime / 1000)});
     }
 };
 
