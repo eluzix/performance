@@ -87,12 +87,15 @@ pub const Profiler = struct {
     pub fn report(self: *Profiler) !void {
         const timeInfo = perf.timeBaseInfo();
         const totalTime = self.elapsedTime * timeInfo.numer / timeInfo.denom;
+        const fTotalTime: f64 = @floatFromInt(totalTime);
 
         for (self.points.items) |point| {
             const pointElapsedTime = point.totalTime + point.childrenTime;
             const pointTime = pointElapsedTime * timeInfo.numer / timeInfo.denom;
-            const percent = pointTime / totalTime * 100;
-            debug.print("{s}: {d} ({d} hits, {d})", .{ point.label, pointElapsedTime, point.hitCount, percent });
+            const fPointTime: f64 = @floatFromInt(pointTime);
+            // const percent = (pointTime / totalTime) * 100;
+            const percent = (fPointTime / fTotalTime) * 100.0;
+            debug.print("{s}: {d} ({d} hits, {d:.2}%)", .{ point.label, pointElapsedTime, point.hitCount, percent });
 
             if (point.byteProcessed > 0) {
                 const fb: f64 = @floatFromInt(point.byteProcessed);
