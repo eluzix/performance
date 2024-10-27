@@ -9,6 +9,7 @@ pub const TimePoint = struct {
     totalTime: u64,
     childrenTime: u64,
     byteProcessed: u64,
+    parentIdx: ?usize,
     label: []const u8,
 
     fn new(label: []const u8) TimePoint {
@@ -18,6 +19,7 @@ pub const TimePoint = struct {
             .totalTime = 0,
             .childrenTime = 0,
             .byteProcessed = 0,
+            .parentIdx = null,
             .label = label,
         };
     }
@@ -27,7 +29,6 @@ pub const TimePoint = struct {
         self.totalTime += t;
         self.hitCount += 1;
         self.byteProcessed += byteProcessed;
-        // debug.print("point.mark {s}: {d}, hits: {d}\n", .{ self.label, t, self.hitCount });
         return t;
     }
 
@@ -41,13 +42,15 @@ pub const Profiler = struct {
     elapsedTime: u64,
     allocator: std.mem.Allocator,
     points: std.ArrayList(TimePoint),
+    stack: std.ArrayList(usize),
 
     pub fn new(allocator: std.mem.Allocator) !Profiler {
         return Profiler{
             .startTime = 0,
             .elapsedTime = 0,
             .allocator = allocator,
-            .points = try std.ArrayList(TimePoint).initCapacity(allocator, 1024),
+            .points = try std.ArrayList(TimePoint).initCapacity(allocator, 4096),
+            .stack = try std.ArrayList(usize).initCapacity(allocator, 64),
         };
     }
 
@@ -70,10 +73,28 @@ pub const Profiler = struct {
 
         if (idx == null) {
             idx = self.points.items.len;
-            try self.points.append(TimePoint.new(label));
+            var tp = TimePoint.new(label);
+
+            if (self.stack.items.len > 0) {
+                const parentIdx = self.stack.getLast();
+                // const parent = &self.points.items[parentIdx];
+                // debug.print("For {s} {d} ADDING parent: {s} {d} total: {d}\n", .{ label, idx.?, parent.label, parentIdx, self.stack.items.len });
+                tp.parentIdx = parentIdx;
+            }
+
+            try self.points.append(tp);
         } else {
             const point = &self.points.items[idx.?];
             point.restart();
+        }
+
+        if (self.stack.items.len == 0) {
+            try self.stack.append(idx.?);
+        } else {
+            const lastRootIdx = self.stack.getLast();
+            if (lastRootIdx != idx.?) {
+                try self.stack.append(idx.?);
+            }
         }
 
         return idx.?;
@@ -81,7 +102,24 @@ pub const Profiler = struct {
 
     pub fn stopSpan(self: *Profiler, idx: usize, byteProcessed: u64) void {
         var point = &self.points.items[idx];
-        _ = point.mark(byteProcessed);
+        const elapsed = point.mark(byteProcessed);
+
+        if (point.parentIdx != null) {
+            const parent = &self.points.items[point.parentIdx.?];
+            parent.childrenTime += elapsed;
+
+            const lastRootIdx = self.stack.getLast();
+            if (lastRootIdx == idx) {
+                _ = self.stack.pop();
+            }
+        }
+
+        if (self.stack.items.len > 0) {
+            const lastRootIdx = self.stack.getLast();
+            if (lastRootIdx == idx) {
+                _ = self.stack.pop();
+            }
+        }
     }
 
     pub fn report(self: *Profiler) !void {
@@ -90,10 +128,9 @@ pub const Profiler = struct {
         const fTotalTime: f64 = @floatFromInt(totalTime);
 
         for (self.points.items) |point| {
-            const pointElapsedTime = point.totalTime + point.childrenTime;
+            const pointElapsedTime = point.totalTime - point.childrenTime;
             const pointTime = pointElapsedTime * timeInfo.numer / timeInfo.denom;
             const fPointTime: f64 = @floatFromInt(pointTime);
-            // const percent = (pointTime / totalTime) * 100;
             const percent = (fPointTime / fTotalTime) * 100.0;
             debug.print("{s}: {d} ({d} hits, {d:.2}%)", .{ point.label, pointElapsedTime, point.hitCount, percent });
 

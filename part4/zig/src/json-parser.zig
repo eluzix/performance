@@ -22,32 +22,22 @@ const Point = struct {
         if (key.len != 2) return;
         const v = try std.fmt.parseFloat(f64, value);
 
-        if (key[0] == 'x') {
-            if (key[1] == '0') {
-                self.X0 = v;
-            } else {
-                self.X1 = v;
-            }
-        } else {
-            if (key[1] == '0') {
-                self.Y0 = v;
-            } else {
-                self.Y1 = v;
-            }
-        }
-    }
-
-    pub fn updateField2(self: *Point, key: []u8, value: []u8) !void {
-        if (key.len != 2) return;
-
-        if (mem.eql(u8, "x0", key)) {
-            self.X0 = try std.fmt.parseFloat(f64, value);
-        } else if (mem.eql(u8, "y0", key)) {
-            self.Y0 = try std.fmt.parseFloat(f64, value);
-        } else if (mem.eql(u8, "x1", key)) {
-            self.X1 = try std.fmt.parseFloat(f64, value);
-        } else if (mem.eql(u8, "y1", key)) {
-            self.Y1 = try std.fmt.parseFloat(f64, value);
+        switch (key[0]) {
+            'x' => {
+                switch (key[1]) {
+                    '0' => self.X0 = v,
+                    '1' => self.X1 = v,
+                    else => unreachable,
+                }
+            },
+            'y' => {
+                switch (key[1]) {
+                    '0' => self.Y0 = v,
+                    '1' => self.Y1 = v,
+                    else => unreachable,
+                }
+            },
+            else => unreachable,
         }
     }
 };
@@ -103,11 +93,12 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
 
     pr.stopSpan(span, readBufferSize);
 
-    var innerSpan: usize = undefined;
+    // var innerSpan: usize = undefined;
     while (true) {
         span = try pr.startSpan("read");
         readCount = try file.read(readBuffer);
         if (readCount == 0) {
+            pr.stopSpan(span, 0);
             break;
         }
         pr.stopSpan(span, readCount);
@@ -134,9 +125,9 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
 
                     const k = parser.key[0..parser.keyLen];
                     const v = parser.value[0..parser.valLen];
-                    innerSpan = try pr.startSpan("updateField");
+                    // innerSpan = try pr.startSpan("updateField");
                     try point.updateField(k, v);
-                    pr.stopSpan(innerSpan, 0);
+                    // pr.stopSpan(innerSpan, 0);
                     try allPoints.append(point);
 
                     parser.keyLen = 0;
@@ -162,9 +153,9 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
 
                         const k = parser.key[0..parser.keyLen];
                         const v = parser.value[0..parser.valLen];
-                        innerSpan = try pr.startSpan("updateField");
+                        // innerSpan = try pr.startSpan("updateField");
                         try point.updateField(k, v);
-                        pr.stopSpan(innerSpan, 0);
+                        // pr.stopSpan(innerSpan, 0);
                     }
                 },
                 '[', ']', ',', ':' => {},
@@ -186,7 +177,7 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
         }
 
         totalBytes += readCount;
-        pr.stopSpan(span, totalBytes);
+        pr.stopSpan(span, readCount);
     }
     _ = allPoints.pop();
 
@@ -221,11 +212,11 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
             total += hav * coefficient;
         }
 
-        std.debug.print("Total haversine in points is {d}\n", .{total});
+        // std.debug.print("Total haversine in points is {d}\n", .{total});
 
         _ = try binFile.read(totalBuf);
         const binValue: f64 = bytesToFloat(totalBuf);
-        std.debug.print("Total haversine in bin file is {d}\n", .{binValue});
+        // std.debug.print("Total haversine in bin file is {d}\n", .{binValue});
         assert(std.math.approxEqAbs(f64, total, binValue, 0.0001));
         pr.stopSpan(span, totalBytes);
     }
