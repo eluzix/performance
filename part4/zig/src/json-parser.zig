@@ -19,6 +19,27 @@ const Point = struct {
     Y1: f64,
 
     pub fn updateField(self: *Point, key: []u8, value: []u8) !void {
+        if (key.len != 2) return;
+        const v = try std.fmt.parseFloat(f64, value);
+
+        if (key[0] == 'x') {
+            if (key[1] == '0') {
+                self.X0 = v;
+            } else {
+                self.X1 = v;
+            }
+        } else {
+            if (key[1] == '0') {
+                self.Y0 = v;
+            } else {
+                self.Y1 = v;
+            }
+        }
+    }
+
+    pub fn updateField2(self: *Point, key: []u8, value: []u8) !void {
+        if (key.len != 2) return;
+
         if (mem.eql(u8, "x0", key)) {
             self.X0 = try std.fmt.parseFloat(f64, value);
         } else if (mem.eql(u8, "y0", key)) {
@@ -49,7 +70,7 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
     pr.startProfile();
 
     var span = try pr.startSpan("init");
-    const readBufferSize: usize = 1024 * 1024 * 4;
+    const readBufferSize: usize = 1024 * 1024 * 16;
     const readBuffer: []u8 = try allocator.alloc(u8, readBufferSize);
     defer allocator.free(readBuffer);
 
@@ -77,18 +98,21 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
         .X1 = 0.0,
         .Y1 = 0.0,
     };
-    var allPoints = try std.ArrayList(Point).initCapacity(allocator, 100000);
+    var allPoints = try std.ArrayList(Point).initCapacity(allocator, 10000);
     defer allPoints.deinit();
 
     pr.stopSpan(span, readBufferSize);
 
-    span = try pr.startSpan("parse");
+    var innerSpan: usize = undefined;
     while (true) {
+        span = try pr.startSpan("read");
         readCount = try file.read(readBuffer);
         if (readCount == 0) {
             break;
         }
+        pr.stopSpan(span, readCount);
 
+        span = try pr.startSpan("parse");
         for (0..readCount) |i| {
             const chr = readBuffer[i];
 
@@ -100,8 +124,6 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
             }
 
             switch (chr) {
-                '[', ']', ',', ':' => {},
-                ' ', '\n', '\t' => {},
                 '{' => {
                     // std.debug.print("start\n", .{});
                     parser.state = ParseState.start;
@@ -112,7 +134,9 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
 
                     const k = parser.key[0..parser.keyLen];
                     const v = parser.value[0..parser.valLen];
+                    innerSpan = try pr.startSpan("updateField");
                     try point.updateField(k, v);
+                    pr.stopSpan(innerSpan, 0);
                     try allPoints.append(point);
 
                     parser.keyLen = 0;
@@ -138,9 +162,13 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
 
                         const k = parser.key[0..parser.keyLen];
                         const v = parser.value[0..parser.valLen];
+                        innerSpan = try pr.startSpan("updateField");
                         try point.updateField(k, v);
+                        pr.stopSpan(innerSpan, 0);
                     }
                 },
+                '[', ']', ',', ':' => {},
+                ' ', '\n', '\t' => {},
                 else => {
                     // std.debug.print("At else with {c} state: {any}, idx: {d}\n", .{ chr, parser.state, parser.idx });
                     // copy char to a buffer
@@ -158,9 +186,9 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
         }
 
         totalBytes += readCount;
+        pr.stopSpan(span, totalBytes);
     }
     _ = allPoints.pop();
-    pr.stopSpan(span, totalBytes);
 
     std.debug.print("Read total of {d} bytes\n", .{totalBytes});
     std.debug.print("found total of {d} points\n", .{allPoints.items.len});
