@@ -126,6 +126,11 @@ pub const Tester = struct {
                     }
 
                     if (self.results.max[@intFromEnum(Metrics.time)] < self.testMetrics[@intFromEnum(Metrics.time)]) {
+                        self.results.max = self.testMetrics;
+                    }
+
+                    const rmin = self.results.min[@intFromEnum(Metrics.time)];
+                    if (rmin == 0 or rmin > self.testMetrics[@intFromEnum(Metrics.time)]) {
                         self.results.min = self.testMetrics;
                         self.startTime = currentTime;
                         self.printTime("Min", self.results.min, true);
@@ -148,7 +153,7 @@ pub const Tester = struct {
     }
 
     fn timeAsSeconds(self: *Tester, time: u64) u64 {
-        return time * self.timeBaseInfo.numer / self.timeBaseInfo.denom;
+        return (time * self.timeBaseInfo.numer / self.timeBaseInfo.denom) / 1000;
     }
 
     fn printTime(self: *Tester, label: []const u8, value: [@intFromEnum(Metrics.count)]u64, carridgeReturn: bool) void {
@@ -161,7 +166,7 @@ pub const Tester = struct {
 
         const time = localValues[@intFromEnum(Metrics.time)];
         const timeInSecs = self.timeAsSeconds(time);
-        debug.print("{s}: {} ({}s)", .{ label, time, timeInSecs });
+        debug.print("{s}: {} ({s})", .{ label, time, std.fmt.fmtDuration(timeInSecs) });
 
         const bytes = localValues[@intFromEnum(Metrics.byteCount)];
         if (bytes > 0) {
@@ -178,7 +183,9 @@ pub const Tester = struct {
         }
 
         if (carridgeReturn) {
-            debug.print("               \n", .{});
+            debug.print("               \r", .{});
+        } else {
+            debug.print("\n", .{});
         }
     }
 
@@ -189,27 +196,26 @@ pub const Tester = struct {
     }
 };
 
-fn run(pageSize: usize) !void {
+fn run(pageSize: usize, pageCount: usize) !void {
     // const pageSize = 4096 * 4;
     // const pageSize = 1024;
-    const pageCount = 128;
+    // const pageCount = 128;
     const totalSize = pageSize * pageCount;
 
     const prot = std.posix.PROT.READ | std.posix.PROT.WRITE;
-    // const flags = std.posix.MAP.ANON | std.posix.MAP.PRIVATE;
 
-    for (0..pageCount + 1) |touchCount| {
+    for (0..pageCount) |touchCount| {
         const touchSize = pageSize * touchCount;
         const addr = try std.posix.mmap(null, totalSize, prot, .{ .TYPE = .PRIVATE, .ANONYMOUS = true }, -1, 0);
         defer std.posix.munmap(addr);
 
         var ptr: [*]u8 = @ptrCast(addr);
-        const startFaults = perf.getPageFaults();
+        // const startFaults = perf.getPageFaults();
         for (0..touchSize) |i| {
             ptr[i] = @truncate(i);
         }
-        const endFaults = perf.getPageFaults();
-        _ = endFaults - startFaults;
+        // const endFaults = perf.getPageFaults();
+        // _ = endFaults - startFaults;
         // const faultCount = endFaults - startFaults;
         // debug.print("{d}, {d}, {d}\n", .{ pageCount, touchCount, faultCount });
     }
@@ -221,11 +227,11 @@ pub fn main() !void {
 
     var t = Tester.new();
     while (true) {
-        t.startNewWave(3, 0);
+        t.startNewWave(5, 0);
 
         while (t.isTesting()) {
             t.beginTime();
-            try run(1024);
+            try run(1024, 1024);
             t.endTime();
             t.countBytes(0);
         }
