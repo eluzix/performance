@@ -58,7 +58,7 @@ pub const Tester = struct {
     }
 
     pub fn startNewWave(self: *Tester, secondsToTry: u64, expectedBytes: u64) void {
-        debug.print(">>>> secondsToTry: {d}\n", .{secondsToTry});
+        // debug.print(">>>> secondsToTry: {d}\n", .{secondsToTry});
         switch (self.state) {
             State.unitialized => {
                 self.state = State.testing;
@@ -74,6 +74,7 @@ pub const Tester = struct {
             },
             State.completed => {
                 self.state = State.testing;
+                // self.testMetrics = [_]u64{0} ** @intFromEnum(Metrics.count);
             },
             State.testing => unreachable,
             State.err => unreachable,
@@ -81,7 +82,6 @@ pub const Tester = struct {
 
         self.startTime = perf.highResolutionClock();
         self.timeToWait = self.timeFromSecs(secondsToTry);
-        // todo: set timeToWait
     }
 
     pub fn setError(self: *Tester, msg: []const u8) void {
@@ -93,6 +93,7 @@ pub const Tester = struct {
         self.openBlocksCount += 1;
         self.testMetrics[@intFromEnum(Metrics.time)] = perf.highResolutionClock();
         self.testMetrics[@intFromEnum(Metrics.pageFaults)] = @intCast(perf.getPageFaults());
+        self.testMetrics[@intFromEnum(Metrics.byteCount)] = 0;
     }
 
     pub fn endTime(self: *Tester) void {
@@ -115,6 +116,7 @@ pub const Tester = struct {
                 }
 
                 if (self.testMetrics[@intFromEnum(Metrics.byteCount)] != self.expectedBytes) {
+                    std.debug.print("expected: {d}, found: {d}\n", .{ self.expectedBytes, self.testMetrics[@intFromEnum(Metrics.byteCount)] });
                     self.setError("byteCount doesn't match\n");
                 }
 
@@ -149,11 +151,12 @@ pub const Tester = struct {
         return false;
     }
     fn timeFromSecs(self: *Tester, seconds: u64) u64 {
-        return seconds * 1_000_000_00 * self.timeBaseInfo.denom / self.timeBaseInfo.denom;
+        return seconds * 10_000_000 * (self.timeBaseInfo.numer / self.timeBaseInfo.denom);
     }
 
     fn timeAsSeconds(self: *Tester, time: u64) u64 {
-        return (time * self.timeBaseInfo.numer / self.timeBaseInfo.denom) / 1000;
+        // return (time * self.timeBaseInfo.numer / self.timeBaseInfo.denom) / 1000;
+        return (time * self.timeBaseInfo.numer / self.timeBaseInfo.denom);
     }
 
     fn printTime(self: *Tester, label: []const u8, value: [@intFromEnum(Metrics.count)]u64, carridgeReturn: bool) void {
@@ -173,7 +176,7 @@ pub const Tester = struct {
             const fb: f64 = @floatFromInt(bytes);
             const gbProcessed = fb / (1024.0 * 1024.0 * 1024.0);
             const fpt: f64 = @floatFromInt(time);
-            const bandwidth = gbProcessed / (fpt / 1000 / 1000 / 1000 / 1000);
+            const bandwidth = gbProcessed / (fpt / 1000 / 1000 / 1000);
             debug.print(" ({d:.10} GB/s)", .{bandwidth});
         }
 

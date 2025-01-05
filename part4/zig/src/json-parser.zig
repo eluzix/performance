@@ -55,11 +55,14 @@ fn bytesToFloat(bytes: []u8) f64 {
     }, .little));
 }
 
-pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) !void {
-    var pr = try profiler.Profiler.new(allocator);
-    pr.startProfile();
+// pub const HaversineSetup = struct { pointsCount: u64, points: std.ArrayList(Point), answers: std.ArrayList(f64), answersSum: f64, valid: bool };
+pub const HaversineSetup = struct { pointsCount: u64, points: []Point, answers: []f64, answersSum: f64, valid: bool, totalBytes: u64 };
 
-    var span = try pr.startSpan("init");
+pub fn setupHaversine(allocator: mem.Allocator, inputFilename: []u8) !HaversineSetup {
+    // var pr = try profiler.Profiler.new(allocator);
+    // pr.startProfile();
+
+    // var span = try pr.startSpan("init");
     const readBufferSize: usize = 1024 * 1024 * 16;
     const readBuffer: []u8 = try allocator.alloc(u8, readBufferSize);
     defer allocator.free(readBuffer);
@@ -88,22 +91,23 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
         .X1 = 0.0,
         .Y1 = 0.0,
     };
-    var allPoints = try std.ArrayList(Point).initCapacity(allocator, 10000);
-    defer allPoints.deinit();
+    var points = try std.ArrayList(Point).initCapacity(allocator, 10000);
+    // var allPoints = try std.ArrayList(Point).initCapacity(allocator, 10000);
+    // defer allPoints.deinit();
 
-    pr.stopSpan(span, readBufferSize);
+    // pr.stopSpan(span, readBufferSize);
 
     // var innerSpan: usize = undefined;
     while (true) {
-        span = try pr.startSpan("read");
+        // span = try pr.startSpan("read");
         readCount = try file.read(readBuffer);
         if (readCount == 0) {
-            pr.stopSpan(span, 0);
+            // pr.stopSpan(span, 0);
             break;
         }
-        pr.stopSpan(span, readCount);
+        // pr.stopSpan(span, readCount);
 
-        span = try pr.startSpan("parse");
+        // span = try pr.startSpan("parse");
         for (0..readCount) |i| {
             const chr = readBuffer[i];
 
@@ -128,7 +132,7 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
                     // innerSpan = try pr.startSpan("updateField");
                     try point.updateField(k, v);
                     // pr.stopSpan(innerSpan, 0);
-                    try allPoints.append(point);
+                    try points.append(point);
 
                     parser.keyLen = 0;
                     parser.valLen = 0;
@@ -177,50 +181,41 @@ pub fn parseJson(allocator: mem.Allocator, inputFilename: []u8, validate: bool) 
         }
 
         totalBytes += readCount;
-        pr.stopSpan(span, readCount);
+        // pr.stopSpan(span, readCount);
     }
-    _ = allPoints.pop();
+    _ = points.pop();
 
+    const pointsCount = points.items.len;
+    // setup.pointsCount = points.items.len;
     std.debug.print("Read total of {d} bytes\n", .{totalBytes});
-    std.debug.print("found total of {d} points\n", .{allPoints.items.len});
+    std.debug.print("found total of {d} points\n", .{pointsCount});
 
-    if (validate) {
-        span = try pr.startSpan("validate");
-        var total: f64 = 0;
-        const totalBuf: []u8 = try allocator.alloc(u8, 8);
-        defer allocator.free(totalBuf);
+    const totalBuf: []u8 = try allocator.alloc(u8, 8);
+    defer allocator.free(totalBuf);
 
-        const binFileName = try std.fmt.allocPrint(allocator, "{s}.json.bin", .{inputFilename});
-        const binFile = try std.fs.cwd().openFile(binFileName, .{});
-        defer binFile.close();
+    const binFileName = try std.fmt.allocPrint(allocator, "{s}.json.bin", .{inputFilename});
+    const binFile = try std.fs.cwd().openFile(binFileName, .{});
+    defer binFile.close();
 
-        // const endPos = try binFile.getEndPos();
-        // try binFile.seekTo(endPos - 8);
-        const fcount: f64 = @floatFromInt(allPoints.items.len);
-        const coefficient: f64 = 1.0 / fcount;
-
-        for (allPoints.items) |p| {
-            const rb = try binFile.read(totalBuf);
-            assert(rb == 8);
-            const binValue: f64 = bytesToFloat(totalBuf);
-
-            const hvs = try pr.startSpan("haversine");
-            const hav = haversine.referenceHaversine(p.X0, p.Y0, p.X1, p.Y1);
-            assert(std.math.approxEqAbs(f64, hav, binValue, 0.0001));
-            pr.stopSpan(hvs, 0);
-
-            total += hav * coefficient;
-        }
-
-        // std.debug.print("Total haversine in points is {d}\n", .{total});
-
-        _ = try binFile.read(totalBuf);
+    var answers = try std.ArrayList(f64).initCapacity(allocator, pointsCount);
+    for (points.items) |_| {
+        const rb = try binFile.read(totalBuf);
+        assert(rb == 8);
         const binValue: f64 = bytesToFloat(totalBuf);
-        // std.debug.print("Total haversine in bin file is {d}\n", .{binValue});
-        assert(std.math.approxEqAbs(f64, total, binValue, 0.0001));
-        pr.stopSpan(span, totalBytes);
+        try answers.append(binValue);
     }
 
-    pr.endProfile();
-    _ = try pr.report();
+    _ = try binFile.read(totalBuf);
+    const binValue: f64 = bytesToFloat(totalBuf);
+
+    // pr.endProfile();
+    // _ = try pr.report();
+    return HaversineSetup{
+        .points = try points.toOwnedSlice(),
+        .valid = true,
+        .answersSum = binValue,
+        .pointsCount = pointsCount,
+        .totalBytes = totalBytes,
+        .answers = try answers.toOwnedSlice(),
+    };
 }
