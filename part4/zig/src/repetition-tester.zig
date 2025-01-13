@@ -71,6 +71,9 @@ pub const Tester = struct {
                     .min = [_]u64{0} ** @intFromEnum(Metrics.count),
                     .max = [_]u64{0} ** @intFromEnum(Metrics.count),
                 };
+
+                const faults: u64 = @intCast(perf.getPageFaults());
+                self.testMetrics[@intFromEnum(Metrics.pageFaults)] = faults - self.testMetrics[@intFromEnum(Metrics.pageFaults)];
             },
             State.completed => {
                 self.state = State.testing;
@@ -155,8 +158,8 @@ pub const Tester = struct {
     }
 
     fn timeAsSeconds(self: *Tester, time: u64) u64 {
-        // return (time * self.timeBaseInfo.numer / self.timeBaseInfo.denom) / 1000;
-        return (time * self.timeBaseInfo.numer / self.timeBaseInfo.denom);
+        return (time * self.timeBaseInfo.numer / self.timeBaseInfo.denom) / 1000;
+        // return (time * self.timeBaseInfo.numer / self.timeBaseInfo.denom);
     }
 
     fn printTime(self: *Tester, label: []const u8, value: [@intFromEnum(Metrics.count)]u64, carridgeReturn: bool) void {

@@ -8,6 +8,7 @@ release/
 haversine_data.json
 haversine.json
 large_haversine*
+large.json
 
 *.o
 zig-out/

@@ -1,8 +1,8 @@
 const std = @import("std");
 
-const EARTH_RADIUS: f64 = 6372.8;
+pub const EARTH_RADIUS: f64 = 6372.8;
 
-fn degreeToRadian(degree: f64) f64 {
+pub fn degreeToRadian(degree: f64) f64 {
     return degree * 0.01745329251994329577;
 }
 
