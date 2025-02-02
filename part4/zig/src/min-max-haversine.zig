@@ -72,7 +72,12 @@ pub fn runHaversine(baseAllocator: mem.Allocator, inputFilename: []u8) !void {
     }
 
     assert(std.math.approxEqAbs(f64, total, setup.answersSum, 0.0001));
-    dbg.print("Min/Max values: {any}\n", .{checks});
+    dbg.print("Cos: {d} :: {d}\n", .{ checks.cos[0], checks.cos[1] });
+    dbg.print("Asin: {d} :: {d}\n", .{ checks.asin[0], checks.asin[1] });
+    dbg.print("Sin: {d} :: {d}\n", .{ checks.sin[0], checks.sin[1] });
+    dbg.print("Sqrt: {d} :: {d}\n", .{ checks.sqrt[0], checks.sqrt[1] });
+    dbg.print("Pow: {d} :: {d}\n", .{ checks.pow[0], checks.pow[1] });
+    // dbg.print("Min/Max values: {any}\n", .{checks});
 }
 
 pub fn main() !void {
