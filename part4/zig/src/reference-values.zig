@@ -3,117 +3,89 @@ const math = std.math;
 const dbg = std.debug;
 const mymath = @import("my-math.zig");
 
-fn rangeCos(step: f64) !void {
-    const range: [2]f64 = [2]f64{ -1.5707944268482854, 1.5707961323959962 };
-    var val = range[0];
+const Input = struct { step: f64, range: [2]f64, refFn: fn (f64) f64, checkFn: fn (f64) f64 };
+
+fn rangeCheck(inp: Input) f64 {
+    var val = inp.range[0];
     var largestDif: f64 = 0.0;
 
-    while (val < range[1]) {
-        const refVal = math.cos(val);
-        const checkVal = mymath.cos(val);
+    while (val < inp.range[1]) {
+        const refVal = inp.refFn(val);
+        const checkVal = inp.checkFn(val);
+        // dbg.print("for {d}, ref: {d} and check: {d}\n", .{ val, refVal, checkVal });
 
-        const diff = @abs(refVal - checkVal);
+        const diff = @abs(checkVal - refVal);
         if (diff > largestDif) {
             largestDif = diff;
         }
 
-        val += step;
+        val += inp.step;
     }
 
-    dbg.print("Cos largest diff: {d}\n", .{largestDif});
+    return largestDif;
 }
 
-fn rangeSin(step: f64) !void {
-    const range: [2]f64 = [2]f64{ -3.1393153778507914, 3.1349791710994097 };
-    var val = range[0];
-    var largestDif: f64 = 0.0;
-
-    while (val < range[1]) {
-        const refVal = math.sin(val);
-        const checkVal = mymath.sin(val);
-
-        const diff = @abs(refVal - checkVal);
-        if (diff > largestDif) {
-            largestDif = diff;
-        }
-
-        val += step;
-    }
-
-    dbg.print("Sin largest diff: {d}\n", .{largestDif});
+fn cosRef(val: f64) f64 {
+    return math.cos(val);
 }
 
-fn rangeAsin(step: f64) !void {
-    const range: [2]f64 = [2]f64{ 0.0004837476495959685, 0.999999854967022 };
-    var val = range[0];
-    var largestDif: f64 = 0.0;
-
-    while (val < range[1]) {
-        const refVal = math.asin(val);
-        const checkVal = mymath.asin(val);
-
-        const diff = @abs(refVal - checkVal);
-        if (diff > largestDif) {
-            largestDif = diff;
-        }
-
-        val += step;
-    }
-
-    dbg.print("Asin largest diff: {d}\n", .{largestDif});
+fn sinRef(val: f64) f64 {
+    return math.sin(val);
 }
 
-fn rangeSqrt(step: f64) !void {
-    const range: [2]f64 = [2]f64{ 0.0, 1.0 };
-    var val = range[0];
-    var largestDif: f64 = 0.0;
-
-    while (val < range[1]) {
-        const refVal = math.sqrt(val);
-        const checkVal = mymath.sqrt(val);
-
-        const diff = @abs(refVal - checkVal);
-        if (diff > largestDif) {
-            largestDif = diff;
-        }
-
-        val += step;
-    }
-
-    dbg.print("Sqrt largest diff: {d}\n", .{largestDif});
+fn asinRef(val: f64) f64 {
+    return math.asin(val);
 }
 
-fn rangePow(step: f64) !void {
-    const range: [2]f64 = [2]f64{ -1.0, 1.0 };
-    var val = range[0];
-    var largestDif: f64 = 0.0;
-
-    while (val < range[1]) {
-        const refVal = math.pow(f64, val, 2.0);
-        const checkVal = mymath.pow(val, 2.0);
-
-        const diff = @abs(refVal - checkVal);
-        if (diff > largestDif) {
-            largestDif = diff;
-        }
-
-        val += step;
-    }
-
-    dbg.print("Pow largest diff: {d}\n", .{largestDif});
+fn sqrtRef(val: f64) f64 {
+    return math.sqrt(val);
 }
 
 pub fn main() !void {
-    var prng = std.rand.DefaultPrng.init(blk: {
-        var seed: u64 = undefined;
-        try std.posix.getrandom(std.mem.asBytes(&seed));
-        break :blk seed;
-    });
-    const rand: std.Random = prng.random();
-    const step = rand.float(f64) / @as(f64, 10000);
-    try rangeCos(step);
-    try rangeSin(step);
-    try rangeAsin(step);
-    try rangeSqrt(step);
-    try rangePow(step);
+    // var prng = std.rand.DefaultPrng.init(blk: {
+    //     var seed: u64 = undefined;
+    //     try std.posix.getrandom(std.mem.asBytes(&seed));
+    //     break :blk seed;
+    // });
+    // const rand: std.Random = prng.random();
+    // const step: f64 = rand.float(f64) / @as(f64, 10000);
+
+    // const r: [2]f64 = [2]f64{ -1.5707944268482854, 2.5707961323959962 };
+
+    // const inp: Input = .{
+    //     // .step = step,
+    //     .step = 0.00001,
+    //     .range = r,
+    //     .checkFn = cosRef,
+    //     .refFn = mymath.cos,
+    // };
+
+    const step = 0.0000001;
+    dbg.print("Cos: {d}\n", .{rangeCheck(.{
+        .step = step,
+        .range = [2]f64{ -1.5707944268482854, 2.5707961323959962 },
+        .checkFn = cosRef,
+        .refFn = mymath.cos,
+    })});
+
+    dbg.print("Sin: {d}\n", .{rangeCheck(.{
+        .step = step,
+        .range = [2]f64{ -3.1393153778507914, 3.1349791710994097 },
+        .checkFn = sinRef,
+        .refFn = mymath.sin,
+    })});
+
+    dbg.print("Asin: {d}\n", .{rangeCheck(.{
+        .step = step,
+        .range = [2]f64{ 0.0, 1.0 },
+        .checkFn = asinRef,
+        .refFn = mymath.asin,
+    })});
+
+    dbg.print("Sqrt: {d}\n", .{rangeCheck(.{
+        .step = step,
+        .range = [2]f64{ 0.0, 1.0 },
+        .checkFn = sqrtRef,
+        .refFn = mymath.sqrt,
+    })});
 }
