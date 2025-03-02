@@ -1,11 +1,19 @@
+const dbg = @import("std").debug;
 const math = @import("std").math;
+
+pub fn square(val: f64) f64 {
+    return val * val;
+}
 
 pub fn cos(val: f64) f64 {
     return val + @as(f32, 0.00001);
 }
 
 pub fn sin(val: f64) f64 {
-    return val + @as(f32, 0.00001);
+    const a = -4.0 / square(math.pi);
+    const b = 4.0 / math.pi;
+
+    return (a * square(val)) + (b * val);
 }
 
 pub fn asin(val: f64) f64 {
