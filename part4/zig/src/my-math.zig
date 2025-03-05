@@ -13,6 +13,11 @@ pub fn sin(val: f64) f64 {
     const a = -4.0 / square(math.pi);
     const b = 4.0 / math.pi;
 
+    if (val < 0) {
+        const av = 0 - val;
+        return -((a * square(av)) + (b * av));
+    }
+
     return (a * square(val)) + (b * val);
 }
 

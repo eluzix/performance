@@ -1,45 +1,8 @@
 const std = @import("std");
 const math = std.math;
 const dbg = std.debug;
+const rt = @import("range-tester.zig");
 const mymath = @import("my-math.zig");
-
-pub const RangeCheckInput = struct { step: f64, range: [2]f64, refFn: fn (f64) f64, checkFn: fn (f64) f64 };
-
-pub fn rangeCheck(inp: RangeCheckInput) f64 {
-    var val = inp.range[0];
-    var largestDif: f64 = 0.0;
-
-    while (val < inp.range[1]) {
-        const refVal = inp.refFn(val);
-        const checkVal = inp.checkFn(val);
-        // dbg.print("for {d}, ref: {d} and check: {d}\n", .{ val, refVal, checkVal });
-
-        const diff = @abs(checkVal - refVal);
-        if (diff > largestDif) {
-            largestDif = diff;
-        }
-
-        val += inp.step;
-    }
-
-    return largestDif;
-}
-
-pub fn cosRef(val: f64) f64 {
-    return math.cos(val);
-}
-
-pub fn sinRef(val: f64) f64 {
-    return math.sin(val);
-}
-
-pub fn asinRef(val: f64) f64 {
-    return math.asin(val);
-}
-
-pub fn sqrtRef(val: f64) f64 {
-    return math.sqrt(val);
-}
 
 pub fn main() !void {
     // var prng = std.rand.DefaultPrng.init(blk: {
@@ -61,31 +24,31 @@ pub fn main() !void {
     // };
 
     const step = 0.0000001;
-    dbg.print("Cos: {d}\n", .{rangeCheck(.{
+    dbg.print("Cos: {d}\n", .{rt.rangeCheck(.{
         .step = step,
         .range = [2]f64{ -1.5707944268482854, 2.5707961323959962 },
-        .checkFn = cosRef,
+        .checkFn = rt.cosRef,
         .refFn = mymath.cos,
-    })});
+    }).maxDiff});
 
-    dbg.print("Sin: {d}\n", .{rangeCheck(.{
+    dbg.print("Sin: {d}\n", .{rt.rangeCheck(.{
         .step = step,
         .range = [2]f64{ -3.1393153778507914, 3.1349791710994097 },
-        .checkFn = sinRef,
+        .checkFn = rt.sinRef,
         .refFn = mymath.sin,
-    })});
+    }).maxDiff});
 
-    dbg.print("Asin: {d}\n", .{rangeCheck(.{
+    dbg.print("Asin: {d}\n", .{rt.rangeCheck(.{
         .step = step,
         .range = [2]f64{ 0.0, 1.0 },
-        .checkFn = asinRef,
+        .checkFn = rt.asinRef,
         .refFn = mymath.asin,
-    })});
+    }).maxDiff});
 
-    dbg.print("Sqrt: {d}\n", .{rangeCheck(.{
+    dbg.print("Sqrt: {d}\n", .{rt.rangeCheck(.{
         .step = step,
         .range = [2]f64{ 0.0, 1.0 },
-        .checkFn = sqrtRef,
+        .checkFn = rt.sqrtRef,
         .refFn = mymath.sqrt,
-    })});
+    }).maxDiff});
 }
