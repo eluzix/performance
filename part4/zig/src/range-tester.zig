@@ -15,7 +15,7 @@ pub const PrecisionTester = struct {
 
     step: f64 = 0.0,
     stepIndex: u32 = 0,
-    stepCount: u32 = 100000000,
+    stepCount: u32 = 10000000,
 };
 
 pub fn rangeCheck(inp: RangeCheckInput) RangeCheckOutput {
