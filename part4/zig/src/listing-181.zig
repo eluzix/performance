@@ -42,6 +42,7 @@ fn taylorSineHoner(power: u32, x: f64) f64 {
         const pwr = power - (p - 1);
         res = res * x2 + taylorSineCoefficient(pwr);
     }
+    res *= x;
 
     return res;
 }
@@ -58,7 +59,7 @@ pub fn main() !void {
     // var tester = rt.PrecisionTester{};
 
     var p = @as(u32, 1);
-    while (p <= 5) : (p += 2) {
+    while (p <= 31) : (p += 2) {
         while (rt.rangePrecisionTest(&tester, 0, math.pi / @as(f64, 2))) {
             // rt.checkPrecisionTest(&tester, math.sin(tester.inputValue), taylorSineHoner(p, tester.inputValue));
 
