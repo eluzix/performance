@@ -58,7 +58,7 @@ pub fn main() !void {
     // var tester = rt.PrecisionTester{};
 
     var p = @as(u32, 1);
-    while (p <= 17) : (p += 2) {
+    while (p <= 5) : (p += 2) {
         while (rt.rangePrecisionTest(&tester, 0, math.pi / @as(f64, 2))) {
             // rt.checkPrecisionTest(&tester, math.sin(tester.inputValue), taylorSineHoner(p, tester.inputValue));
 
@@ -66,6 +66,7 @@ pub fn main() !void {
             rt.checkPrecisionTest(&tester, math.sin(tester.inputValue), taylorSine(p, tester.inputValue), try std.fmt.bufPrint(&label, "tylorSine{d}", .{p}));
             rt.checkPrecisionTest(&tester, math.sin(tester.inputValue), taylorSineHoner(p, tester.inputValue), try std.fmt.bufPrint(&label, "tylorSineHoner{d}", .{p}));
         }
-        // rt.printIntermediateResults(&tester);
     }
+
+    rt.printResults(&tester);
 }

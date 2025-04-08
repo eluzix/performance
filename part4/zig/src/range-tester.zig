@@ -1,6 +1,8 @@
 const std = @import("std");
 const math = std.math;
 
+const MAX_RESULTS: u32 = 255;
+
 pub const RangeCheckInput = struct { step: f64, range: [2]f64, refFn: fn (f64) f64, checkFn: fn (f64) f64 };
 pub const RangeCheckOutput = struct { maxDiff: f64 };
 
@@ -8,7 +10,7 @@ pub const PrecisionTesterResult = struct { label: [128]u8, maxDiff: f64 = 0.0, t
 
 pub const PrecisionTester = struct {
     // results: std.ArrayList(PrecisionTesterResult),
-    results: [255]PrecisionTesterResult = undefined,
+    results: [MAX_RESULTS]PrecisionTesterResult = undefined,
     testing: bool = false,
     inputValue: f64 = 0.0,
 
@@ -106,7 +108,38 @@ pub fn printIntermediateResults(tester: *PrecisionTester) void {
     std.debug.print("--------------------\n", .{});
 }
 
-// pub fn printResults(tester: *PrecisionTester) void {}
+fn resultsLessThan(tester: *PrecisionTester, lhs: usize, rhs: usize) bool {
+    return tester.results[lhs].maxDiff < tester.results[rhs].maxDiff;
+}
+
+pub fn printResults(tester: *PrecisionTester) void {
+    const total = tester.resultOffset;
+    var indexes: [MAX_RESULTS]usize = undefined;
+    for (0..total) |i| {
+        indexes[i] = i;
+        // std.debug.print(">>>>>>>>> {d}: {s}\n", .{ i, tester.results[i].label });
+    }
+
+    std.mem.sort(usize, indexes[0..total], tester, resultsLessThan);
+
+    var i: usize = 0;
+    while (i < total) {
+        const result = tester.results[indexes[i]];
+        std.debug.print("{d} [{s}", .{ result.maxDiff, result.label });
+        while (i + 1 < total) {
+            const nextResult = tester.results[indexes[i + 1]];
+            if (nextResult.maxDiff == result.maxDiff) {
+                std.debug.print(", {s}", .{nextResult.label});
+                i += 1;
+            } else {
+                break;
+            }
+        }
+
+        std.debug.print("]\n", .{});
+        i += 1;
+    }
+}
 
 pub fn cosRef(val: f64) f64 {
     return math.cos(val);
