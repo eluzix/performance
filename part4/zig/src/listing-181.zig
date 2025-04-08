@@ -66,6 +66,6 @@ pub fn main() !void {
             rt.checkPrecisionTest(&tester, math.sin(tester.inputValue), taylorSine(p, tester.inputValue), try std.fmt.bufPrint(&label, "tylorSine{d}", .{p}));
             rt.checkPrecisionTest(&tester, math.sin(tester.inputValue), taylorSineHoner(p, tester.inputValue), try std.fmt.bufPrint(&label, "tylorSineHoner{d}", .{p}));
         }
+        // rt.printIntermediateResults(&tester);
     }
-    rt.printPrecisionTesterResults(&tester);
 }

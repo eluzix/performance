@@ -14,6 +14,7 @@ pub const PrecisionTester = struct {
 
     resultIndex: u32 = 0,
     resultOffset: u32 = 0,
+    resultCount: u32 = 0,
 
     step: f64 = 0.0,
     stepIndex: u32 = 0,
@@ -57,10 +58,6 @@ pub fn rangePrecisionTest(tester: *PrecisionTester, min: f64, max: f64) bool {
     } else {
         tester.testing = true;
         tester.stepIndex = 0;
-        // tester.maxDiff = -100000000;
-        // tester.testedValueAtMaxDiff = min;
-        // tester.expectedValueAtMaxDiff = min;
-        // tester.inputValueAtMaxDiff = min;
     }
 
     if (tester.stepIndex < tester.stepCount) {
@@ -71,33 +68,26 @@ pub fn rangePrecisionTest(tester: *PrecisionTester, min: f64, max: f64) bool {
     } else {
         tester.testing = false;
         tester.resultOffset += origIndex;
+        tester.resultCount = origIndex;
+        printIntermediateResults(tester);
     }
 
     return tester.testing;
 }
 
 pub fn checkPrecisionTest(tester: *PrecisionTester, expected: f64, tested: f64, label: []u8) void {
-    // var result: *PrecisionTesterResult = undefined;
-
     const idx = tester.resultOffset + tester.resultIndex;
     var result = &tester.results[idx];
+
     tester.resultIndex += 1;
+    tester.resultCount += 1;
 
     if (tester.stepIndex == 0) {
         std.mem.copyForwards(u8, result.label[0..label.len], label);
     }
-    // } else {
-    //     for (tester.results) |res| {
-    //         if (std.mem.eql(u8, &res.label, label)) {
-    //             result = @constCast(&res);
-    //             break;
-    //         }
-    //     }
-    // }
 
     const diff = @abs(expected - tested);
     if (diff > result.maxDiff) {
-        // std.debug.print("checkPrecisionTest expected: {d}, tested: {d} --- diff: {d}\n", .{ expected, tested, diff });
         result.maxDiff = diff;
         result.expectedValueAtMaxDiff = expected;
         result.testedValueAtMaxDiff = tested;
@@ -106,14 +96,17 @@ pub fn checkPrecisionTest(tester: *PrecisionTester, expected: f64, tested: f64, 
     result.totalDiff += diff;
 }
 
-pub fn printPrecisionTesterResults(tester: *PrecisionTester) void {
-    for (tester.results) |result| {
+pub fn printIntermediateResults(tester: *PrecisionTester) void {
+    const idx = tester.resultOffset - tester.resultCount;
+    for (tester.results[idx..]) |result| {
         if (result.maxDiff != 0.0) {
             std.debug.print("{s}, max diff: {d}\n", .{ result.label, result.maxDiff });
         }
     }
     std.debug.print("--------------------\n", .{});
 }
+
+// pub fn printResults(tester: *PrecisionTester) void {}
 
 pub fn cosRef(val: f64) f64 {
     return math.cos(val);
