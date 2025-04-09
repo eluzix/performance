@@ -102,7 +102,9 @@ pub fn printIntermediateResults(tester: *PrecisionTester) void {
     const idx = tester.resultOffset - tester.resultCount;
     for (tester.results[idx..]) |result| {
         if (result.maxDiff != 0.0) {
-            std.debug.print("{s}, max diff: {d}\n", .{ result.label, result.maxDiff });
+            // std.debug.print("{s}, max diff: {d}\n", .{ result.label, result.maxDiff });
+            std.debug.print("  _______________\n", .{});
+            std.debug.print("{d} for {s}\n", .{ result.maxDiff, result.label });
         }
     }
     std.debug.print("--------------------\n", .{});
