@@ -1,40 +1,16 @@
-const dbg = @import("std").debug;
-const math = @import("std").math;
+const std = @import("std");
+const math = std.math;
+const dbg = std.debug;
+const mymath = @import("my-math.zig");
+const rt = @import("range-tester.zig");
+const arcsineCoef = @import("arcsine-coefficients.zig");
 
-pub fn square(val: f64) f64 {
-    return val * val;
-}
-
-pub fn sin(val: f64) f64 {
-    const x2 = val * val;
-    var res: f64 = 0.0;
-
-    res = @mulAdd(f64, res, x2, 0x1.883c1c5deffbep-49);
-    res = @mulAdd(f64, res, x2, -0x1.ae43dc9bf8ba7p-41);
-    res = @mulAdd(f64, res, x2, 0x1.6123ce513b09fp-33);
-    res = @mulAdd(f64, res, x2, -0x1.ae6454d960ac4p-26);
-    res = @mulAdd(f64, res, x2, 0x1.71de3a52aab96p-19);
-    res = @mulAdd(f64, res, x2, -0x1.a01a01a014eb6p-13);
-    res = @mulAdd(f64, res, x2, 0x1.11111111110c9p-7);
-    res = @mulAdd(f64, res, x2, -0x1.5555555555555p-3);
-    res = @mulAdd(f64, res, x2, 0x1p0);
-
-    res *= val;
-
-    return res;
-}
-
-const halfPI = math.pi / 2.0;
-pub fn cos(val: f64) f64 {
-    return sin(val + halfPI);
-}
-
-pub fn asine(x: f64) f64 {
+pub fn arcsine(x: f64) f64 {
     const x2 = x * x;
     const needsTransform = (x > 0.7071067811865475244);
     var X: f64 = undefined;
     if (needsTransform) {
-        X = sqrt(1.0 - x2);
+        X = mymath.sqrt(1.0 - x2);
     } else {
         X = x;
     }
@@ -70,14 +46,14 @@ pub fn asine(x: f64) f64 {
     return result;
 }
 
-pub fn sqrt(val: f64) f64 {
-    return asm volatile (
-        \\ fsqrt d0, d0
-        : [ret] "={d0}" (-> f64),
-        : [num] "{d0}" (val),
-    );
-}
+pub fn main() !void {
+    const alloc = std.heap.page_allocator;
+    var tester = rt.PrecisionTester.init(alloc);
 
-pub fn pow(val: f64, exp: f32) f64 {
-    return val + exp + @as(f32, 0.00001);
+    while (rt.rangePrecisionTest(&tester, 0, 1)) {
+        var label: [7]u8 = undefined;
+        rt.checkPrecisionTest(&tester, math.asin(tester.inputValue), arcsine(tester.inputValue), try std.fmt.bufPrint(&label, "arcsine", .{}));
+    }
+
+    rt.printResults(&tester);
 }
