@@ -5,11 +5,20 @@ pub fn square(val: f64) f64 {
     return val * val;
 }
 
+const halfPI = math.pi / 2.0;
 pub fn sin(val: f64) f64 {
-    const x2 = val * val;
-    var res: f64 = 0.0;
+    const absVal = @abs(val);
+    var x: f64 = undefined;
 
-    res = @mulAdd(f64, res, x2, 0x1.883c1c5deffbep-49);
+    if (absVal > halfPI) {
+        x = math.pi - absVal;
+    } else {
+        x = absVal;
+    }
+
+    const x2 = x * x;
+    var res: f64 = 0x1.883c1c5deffbep-49;
+
     res = @mulAdd(f64, res, x2, -0x1.ae43dc9bf8ba7p-41);
     res = @mulAdd(f64, res, x2, 0x1.6123ce513b09fp-33);
     res = @mulAdd(f64, res, x2, -0x1.ae6454d960ac4p-26);
@@ -19,12 +28,15 @@ pub fn sin(val: f64) f64 {
     res = @mulAdd(f64, res, x2, -0x1.5555555555555p-3);
     res = @mulAdd(f64, res, x2, 0x1p0);
 
-    res *= val;
+    res *= x;
+
+    if (val < 0) {
+        return -res;
+    }
 
     return res;
 }
 
-const halfPI = math.pi / 2.0;
 pub fn cos(val: f64) f64 {
     return sin(val + halfPI);
 }
