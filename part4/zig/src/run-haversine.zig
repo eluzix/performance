@@ -36,6 +36,7 @@ fn checkHaversineReplacment(setup: *parser.HaversineSetup) error{}!void {
 
     for (setup.points, setup.answers) |p, a| {
         const hav = haversine.haversineReplacment(p.X0, p.Y0, p.X1, p.Y1);
+        // std.debug.print(">>>>>>> {d} = {d}\n", .{ a, hav });
         assert(std.math.approxEqAbs(f64, hav, a, 0.0001));
 
         total += hav * coefficient;
@@ -52,14 +53,14 @@ pub fn runHaversine(baseAllocator: mem.Allocator, inputFilename: []u8) !void {
     const allocator = arena.allocator();
     var setup = try parser.setupHaversine(allocator, inputFilename);
 
-    const functions = [_]HaversineChecker{HaversineChecker{
-        .name = "naive checker",
-        .func = checkHaversine,
-    }};
     // const functions = [_]HaversineChecker{HaversineChecker{
-    //     .name = "replacment checker",
-    //     .func = checkHaversineReplacment,
+    //     .name = "naive checker",
+    //     .func = checkHaversine,
     // }};
+    const functions = [_]HaversineChecker{HaversineChecker{
+        .name = "replacment checker",
+        .func = checkHaversineReplacment,
+    }};
 
     var tester = repetitionTester.Tester.new();
 

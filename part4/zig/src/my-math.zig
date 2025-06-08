@@ -42,14 +42,14 @@ pub fn cos(val: f64) f64 {
 }
 
 pub fn asine(x: f64) f64 {
-    const x2 = x * x;
     const needsTransform = (x > 0.7071067811865475244);
     var X: f64 = undefined;
     if (needsTransform) {
-        X = sqrt(1.0 - x2);
+        X = sqrt(1.0 - (x * x));
     } else {
         X = x;
     }
+    const x2 = X * X;
 
     var r: f64 = 0x1.dfc53682725cap-1;
     r = @mulAdd(f64, r, x2, -0x1.bec6daf74ed61p1);

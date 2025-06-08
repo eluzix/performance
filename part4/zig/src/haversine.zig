@@ -26,9 +26,9 @@ pub fn haversineReplacment(lon1: f64, lat1: f64, lon2: f64, lat2: f64) f64 {
     const llat1 = degreeToRadian(lat1);
     const llat2 = degreeToRadian(lat2);
 
-    const a: f64 = std.math.pow(f64, (mymath.sin(dlat / 2.0)), 2.0) + mymath.cos(llat1) * mymath.cos(llat2) * std.math.pow(f64, (mymath.sin(dlon / 2.0)), 2.0);
+    const a: f64 = mymath.square(mymath.sin(dlat / 2.0)) + mymath.cos(llat1) * mymath.cos(llat2) * mymath.square(mymath.sin(dlon / 2.0));
 
-    const c: f64 = 2.0 * std.math.asin(mymath.sqrt(a));
+    const c: f64 = 2.0 * mymath.asine(mymath.sqrt(a));
 
     return c * EARTH_RADIUS;
 }

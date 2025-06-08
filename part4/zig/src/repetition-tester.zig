@@ -127,7 +127,7 @@ pub const Tester = struct {
                     self.testMetrics[@intFromEnum(Metrics.testCount)] += 1;
 
                     for (0..@intFromEnum(Metrics.count)) |i| {
-                        self.results.totals[i] = self.testMetrics[i];
+                        self.results.totals[i] += self.testMetrics[i];
                     }
 
                     if (self.results.max[@intFromEnum(Metrics.time)] < self.testMetrics[@intFromEnum(Metrics.time)]) {
