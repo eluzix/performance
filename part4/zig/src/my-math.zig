@@ -41,14 +41,7 @@ pub fn cos(val: f64) f64 {
     return sin(val + halfPI);
 }
 
-pub fn asine(x: f64) f64 {
-    const needsTransform = (x > 0.7071067811865475244);
-    var X: f64 = undefined;
-    if (needsTransform) {
-        X = sqrt(1.0 - (x * x));
-    } else {
-        X = x;
-    }
+pub fn asineCore(X: f64) f64 {
     const x2 = X * X;
 
     var r: f64 = 0x1.dfc53682725cap-1;
@@ -72,11 +65,21 @@ pub fn asine(x: f64) f64 {
     r = @mulAdd(f64, r, x2, 0x1p0);
     r *= X;
 
-    var result: f64 = undefined;
+    return r;
+}
+
+pub fn asine(x: f64) f64 {
+    const needsTransform = (x > 0.7071067811865475244);
+    var X: f64 = undefined;
     if (needsTransform) {
-        result = 1.57079632679489661923 - r;
+        X = sqrt(1.0 - (x * x));
     } else {
-        result = r;
+        X = x;
+    }
+
+    var result: f64 = asineCore(X);
+    if (needsTransform) {
+        result = 1.57079632679489661923 - result;
     }
 
     return result;

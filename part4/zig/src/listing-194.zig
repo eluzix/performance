@@ -45,26 +45,80 @@ fn checkHaversineBase(setup: *parser.HaversineSetup) error{}!void {
     setup.valid = true;
 }
 
+const halfPI = math.pi / 2.0;
 fn checkHaversineUnrolled(setup: *parser.HaversineSetup) error{}!void {
     const fcount: f64 = @floatFromInt(setup.pointsCount);
-    const coefficient: f64 = 1.0 / fcount;
+    // const coefficient: f64 = 1.0 / fcount;
     var total: f64 = 0;
     const RAD = 0.01745329251994329577;
 
-    for (setup.points, setup.answers) |p, ans| {
+    const sumCoeff = (2.0 * EARTH_RADIUS) / fcount;
+
+    for (setup.points) |p| {
         const dlat = RAD * (p.Y1 - p.Y0);
         const dlon = RAD * (p.X1 - p.X0);
         const llat1 = RAD * p.Y0;
         const llat2 = RAD * p.Y1;
 
-        const a: f64 = mymath.square(mymath.sin(dlat / 2.0)) + mymath.cos(llat1) * mymath.cos(llat2) * mymath.square(mymath.sin(dlon / 2.0));
+        const sinHalfDlat = mymath.sin(dlat / 2.0);
+        const cosLlat1 = mymath.sin(llat1 + halfPI);
+        const cosLlat2 = mymath.sin(llat2 + halfPI);
+        const sinHalfSlon = mymath.sin(dlon / 2.0);
 
-        const c: f64 = 2.0 * mymath.asine(mymath.sqrt(a));
+        const a: f64 = sinHalfDlat * sinHalfDlat + cosLlat1 * cosLlat2 * sinHalfSlon * sinHalfSlon;
+        const sqrtA = mymath.sqrt(a);
 
-        const hav = c * EARTH_RADIUS;
-        assert(std.math.approxEqAbs(f64, hav, ans, 0.000001));
+        const needsTransform = (sqrtA > 0.7071067811865475244);
+        var X: f64 = sqrtA;
+        if (needsTransform) {
+            X = mymath.sqrt(1.0 - (sqrtA * sqrtA));
+        }
+        var c = mymath.asineCore(X);
+        if (needsTransform) {
+            c = 1.57079632679489661923 - c;
+        }
 
-        total += hav * coefficient;
+        total = @mulAdd(f64, sumCoeff, c, total);
+    }
+
+    assert(std.math.approxEqAbs(f64, total, setup.answersSum, 0.000001));
+    setup.valid = true;
+}
+
+fn checkHaversineSimplified(setup: *parser.HaversineSetup) error{}!void {
+    const fcount: f64 = @floatFromInt(setup.pointsCount);
+    // const coefficient: f64 = 1.0 / fcount;
+    var total: f64 = 0;
+    const RAD = 0.01745329251994329577;
+    const halfRAD = RAD / 2.0;
+
+    const sumCoeff = (2.0 * EARTH_RADIUS) / fcount;
+
+    for (setup.points) |p| {
+        const dlat = halfRAD * (p.Y1 - p.Y0);
+        const dlon = halfRAD * (p.X1 - p.X0);
+        const llat1 = @mulAdd(f64, RAD, p.Y0, halfPI);
+        const llat2 = @mulAdd(f64, RAD, p.Y1, halfPI);
+
+        const sinHalfDlat = mymath.sin(dlat);
+        const cosLlat1 = mymath.sin(llat1);
+        const cosLlat2 = mymath.sin(llat2);
+        const sinHalfSlon = mymath.sin(dlon);
+
+        const a: f64 = sinHalfDlat * sinHalfDlat + cosLlat1 * cosLlat2 * sinHalfSlon * sinHalfSlon;
+        const sqrtA = mymath.sqrt(a);
+
+        const needsTransform = (sqrtA > 0.7071067811865475244);
+        var X: f64 = sqrtA;
+        if (needsTransform) {
+            X = mymath.sqrt(1.0 - (sqrtA * sqrtA));
+        }
+        var c = mymath.asineCore(X);
+        if (needsTransform) {
+            c = 1.57079632679489661923 - c;
+        }
+
+        total = @mulAdd(f64, sumCoeff, c, total);
     }
 
     assert(std.math.approxEqAbs(f64, total, setup.answersSum, 0.000001));
@@ -78,34 +132,35 @@ pub fn runHaversine(baseAllocator: mem.Allocator, inputFilename: []u8) !void {
     var setup = try parser.setupHaversine(allocator, inputFilename);
 
     const functions = [_]HaversineChecker{
-        HaversineChecker{
-            .name = "Base",
-            .func = checkHaversineBase,
-            // .tester = repetitionTester.Tester.new(),
-        },
+        // HaversineChecker{
+        //     .name = "Base",
+        //     .func = checkHaversineBase,
+        //     // .tester = repetitionTester.Tester.new(),
+        // },
         HaversineChecker{
             .name = "Unrolled",
             .func = checkHaversineUnrolled,
-            // .tester = repetitionTester.Tester.new(),
+        },
+        HaversineChecker{
+            .name = "Simplified",
+            .func = checkHaversineSimplified,
         },
     };
 
     var testSeries = repetitionTester.ReptitionTestSeries(1, functions.len).new();
     testSeries.setRowLabel("haversine"[0..]);
 
-    while (true) {
-        for (functions) |hc| {
-            testSeries.setColumnLabel(hc.name);
+    for (functions) |hc| {
+        testSeries.setColumnLabel(hc.name);
 
-            var tester = repetitionTester.Tester.new();
+        var tester = repetitionTester.Tester.new();
 
-            testSeries.newTestWave(&tester, 5, setup.totalBytes);
-            while (testSeries.isTesting(&tester)) {
-                tester.beginTime();
-                try hc.func(&setup);
-                tester.endTime();
-                tester.countBytes(setup.totalBytes);
-            }
+        testSeries.newTestWave(&tester, 5, setup.totalBytes);
+        while (testSeries.isTesting(&tester)) {
+            tester.beginTime();
+            try hc.func(&setup);
+            tester.endTime();
+            tester.countBytes(setup.totalBytes);
         }
     }
 
