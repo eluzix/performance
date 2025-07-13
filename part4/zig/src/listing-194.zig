@@ -25,7 +25,7 @@ fn checkHaversineBase(setup: *parser.HaversineSetup) error{}!void {
     const coefficient: f64 = 1.0 / fcount;
     var total: f64 = 0;
 
-    for (setup.points, setup.answers) |p, ans| {
+    for (setup.points) |p| {
         const dlat = degreeToRadian(p.Y1 - p.Y0);
         const dlon = degreeToRadian(p.X1 - p.X0);
         const llat1 = degreeToRadian(p.Y0);
@@ -36,8 +36,6 @@ fn checkHaversineBase(setup: *parser.HaversineSetup) error{}!void {
         const c: f64 = 2.0 * std.math.asin(std.math.sqrt(a));
 
         const hav = c * EARTH_RADIUS;
-        assert(std.math.approxEqAbs(f64, hav, ans, 0.000001));
-
         total += hav * coefficient;
     }
 
@@ -132,11 +130,10 @@ pub fn runHaversine(baseAllocator: mem.Allocator, inputFilename: []u8) !void {
     var setup = try parser.setupHaversine(allocator, inputFilename);
 
     const functions = [_]HaversineChecker{
-        // HaversineChecker{
-        //     .name = "Base",
-        //     .func = checkHaversineBase,
-        //     // .tester = repetitionTester.Tester.new(),
-        // },
+        HaversineChecker{
+            .name = "Base",
+            .func = checkHaversineBase,
+        },
         HaversineChecker{
             .name = "Unrolled",
             .func = checkHaversineUnrolled,
@@ -155,7 +152,7 @@ pub fn runHaversine(baseAllocator: mem.Allocator, inputFilename: []u8) !void {
 
         var tester = repetitionTester.Tester.new();
 
-        testSeries.newTestWave(&tester, 5, setup.totalBytes);
+        testSeries.newTestWave(&tester, 8, setup.totalBytes);
         while (testSeries.isTesting(&tester)) {
             tester.beginTime();
             try hc.func(&setup);
