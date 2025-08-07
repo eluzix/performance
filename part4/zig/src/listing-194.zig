@@ -147,21 +147,23 @@ pub fn runHaversine(baseAllocator: mem.Allocator, inputFilename: []u8) !void {
     var testSeries = repetitionTester.ReptitionTestSeries(1, functions.len).new();
     testSeries.setRowLabel("haversine"[0..]);
 
-    for (functions) |hc| {
-        testSeries.setColumnLabel(hc.name);
+    while (true) {
+        for (functions) |hc| {
+            testSeries.setColumnLabel(hc.name);
 
-        var tester = repetitionTester.Tester.new();
+            var tester = repetitionTester.Tester.new();
 
-        testSeries.newTestWave(&tester, 8, setup.totalBytes);
-        while (testSeries.isTesting(&tester)) {
-            tester.beginTime();
-            try hc.func(&setup);
-            tester.endTime();
-            tester.countBytes(setup.totalBytes);
+            testSeries.newTestWave(&tester, 8, setup.totalBytes);
+            while (testSeries.isTesting(&tester)) {
+                tester.beginTime();
+                try hc.func(&setup);
+                tester.endTime();
+                tester.countBytes(setup.totalBytes);
+            }
         }
     }
 
-    std.debug.print("?>>>>>>> {any}\n", .{testSeries.results});
+    // std.debug.print("?>>>>>>> {any}\n", .{testSeries.results});
 }
 
 pub fn main() !void {
