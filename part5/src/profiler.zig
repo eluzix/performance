@@ -1,5 +1,6 @@
 const std = @import("std");
 const mem = std.mem;
+const io = std.io;
 const debug = std.debug;
 const perf = @import("perf-metrics.zig");
 
@@ -43,6 +44,7 @@ pub const Profiler = struct {
     allocator: std.mem.Allocator,
     points: std.ArrayList(TimePoint),
     stack: std.ArrayList(usize),
+    reportBuffer: io.Writer.Allocating,
 
     pub fn new(allocator: std.mem.Allocator) !Profiler {
         return Profiler{
@@ -51,6 +53,7 @@ pub const Profiler = struct {
             .allocator = allocator,
             .points = try std.ArrayList(TimePoint).initCapacity(allocator, 4096),
             .stack = try std.ArrayList(usize).initCapacity(allocator, 64),
+            .reportBuffer = try .initCapacity(allocator, 128),
         };
     }
 
@@ -82,18 +85,18 @@ pub const Profiler = struct {
                 tp.parentIdx = parentIdx;
             }
 
-            try self.points.append(tp);
+            try self.points.append(self.allocator, tp);
         } else {
             const point = &self.points.items[idx.?];
             point.restart();
         }
 
         if (self.stack.items.len == 0) {
-            try self.stack.append(idx.?);
+            try self.stack.append(self.allocator, idx.?);
         } else {
             const lastRootIdx = self.stack.getLast();
             if (lastRootIdx != idx.?) {
-                try self.stack.append(idx.?);
+                try self.stack.append(self.allocator, idx.?);
             }
         }
 
@@ -146,41 +149,46 @@ pub const Profiler = struct {
             debug.print("\n", .{});
         }
 
-        debug.print("Total time: {s}\n", .{std.fmt.fmtDuration(totalTime / 1000)});
+        try io.Writer.printDuration(&self.reportBuffer.writer, totalTime, .{});
+        debug.print("Total time: {s}\n", .{try self.reportBuffer.toOwnedSlice()});
     }
 };
 
 pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    // var gpa = std.heap.DebugAllocator(.{}){};
+    var b: [1024 * 1024]u8 = undefined;
+    var gpa = std.heap.FixedBufferAllocator.init(&b);
     const allocator = gpa.allocator();
 
     var profiler = try Profiler.new(allocator);
-    profiler.startProfile();
 
-    var idx = try profiler.startSpan("test");
-    debug.print("IDX 1: {d}\n", .{idx});
-    for (0..100000) |_| {
-        var tp = TimePoint.new("inside....");
-        _ = tp.mark(100);
+    for (0..10) |_| {
+        profiler.startProfile();
+        var idx = try profiler.startSpan("test");
+        debug.print("IDX 1: {d}\n", .{idx});
+        for (0..100000) |_| {
+            var tp = TimePoint.new("inside....");
+            _ = tp.mark(100);
+        }
+        profiler.stopSpan(idx, 1024000);
+
+        idx = try profiler.startSpan("test");
+        debug.print("IDX 2: {d}\n", .{idx});
+        for (0..100000) |_| {
+            var tp = TimePoint.new("inside....");
+            _ = tp.mark(100);
+        }
+        profiler.stopSpan(idx, 8192000);
+
+        idx = try profiler.startSpan("XXX");
+        debug.print("IDX 3: {d}\n", .{idx});
+        for (0..100000) |_| {
+            var tp = TimePoint.new("inside....");
+            _ = tp.mark(100);
+        }
+        profiler.stopSpan(idx, 8192000);
+
+        profiler.endProfile();
+        try profiler.report();
     }
-    profiler.stopSpan(idx, 1024000);
-
-    idx = try profiler.startSpan("test");
-    debug.print("IDX 2: {d}\n", .{idx});
-    for (0..100000) |_| {
-        var tp = TimePoint.new("inside....");
-        _ = tp.mark(100);
-    }
-    profiler.stopSpan(idx, 8192000);
-
-    idx = try profiler.startSpan("XXX");
-    debug.print("IDX 3: {d}\n", .{idx});
-    for (0..100000) |_| {
-        var tp = TimePoint.new("inside....");
-        _ = tp.mark(100);
-    }
-    profiler.stopSpan(idx, 8192000);
-
-    profiler.endProfile();
-    try profiler.report();
 }
