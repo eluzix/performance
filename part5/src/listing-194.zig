@@ -152,7 +152,7 @@ pub fn runHaversine(baseAllocator: mem.Allocator, inputFilename: []u8) !void {
         for (functions) |hc| {
             testSeries.setColumnLabel(hc.name);
 
-            var tester = repetitionTester.Tester.new(allocator);
+            var tester = repetitionTester.Tester.new();
 
             testSeries.newTestWave(&tester, 8, setup.totalBytes);
             while (testSeries.isTesting(&tester)) {

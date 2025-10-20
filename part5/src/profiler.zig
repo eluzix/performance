@@ -44,7 +44,7 @@ pub const Profiler = struct {
     allocator: std.mem.Allocator,
     points: std.ArrayList(TimePoint),
     stack: std.ArrayList(usize),
-    reportBuffer: io.Writer.Allocating,
+    labelTimeBuffer: [64]u8,
 
     pub fn new(allocator: std.mem.Allocator) !Profiler {
         return Profiler{
@@ -53,7 +53,7 @@ pub const Profiler = struct {
             .allocator = allocator,
             .points = try std.ArrayList(TimePoint).initCapacity(allocator, 4096),
             .stack = try std.ArrayList(usize).initCapacity(allocator, 64),
-            .reportBuffer = try .initCapacity(allocator, 128),
+            .labelTimeBuffer = [_]u8{0} ** 64,
         };
     }
 
@@ -149,8 +149,10 @@ pub const Profiler = struct {
             debug.print("\n", .{});
         }
 
-        try io.Writer.printDuration(&self.reportBuffer.writer, totalTime, .{});
-        debug.print("Total time: {s}\n", .{try self.reportBuffer.toOwnedSlice()});
+        var w: io.Writer = .fixed(&self.labelTimeBuffer);
+        w.printDuration(totalTime, .{}) catch unreachable;
+
+        debug.print("Total time: {s}\n", .{w.buffered()});
     }
 };
 

@@ -105,7 +105,6 @@ pub fn ReptitionTestSeries(comptime maxRows: usize, comptime columnCount: usize)
 }
 
 pub const Tester = struct {
-    allocator: std.mem.Allocator,
     state: State,
     startTime: u64,
     timeToWait: u64,
@@ -117,13 +116,12 @@ pub const Tester = struct {
     expectedBytes: u64,
     testMetrics: [@intFromEnum(Metrics.count)]u64,
 
+    labelTimeBuffer: [64]u8,
     results: Results,
-    reportBuffer: std.io.Writer.Allocating,
 
-    pub fn new(allocator: std.mem.Allocator) Tester {
+    pub fn new() Tester {
         const size = @intFromEnum(Metrics.count);
         return Tester{
-            .allocator = allocator,
             .state = State.unitialized,
             .startTime = 0,
             .timeToWait = 0,
@@ -132,12 +130,12 @@ pub const Tester = struct {
             .closeBlockCount = 0,
             .expectedBytes = 0,
             .testMetrics = [_]u64{0} ** size,
+            .labelTimeBuffer = [_]u8{0} ** 64,
             .results = Results{
                 .totals = [_]u64{0} ** size,
                 .min = [_]u64{0} ** size,
                 .max = [_]u64{0} ** size,
             },
-            .reportBuffer = std.io.Writer.Allocating.initCapacity(allocator, 128) catch unreachable,
         };
     }
 
@@ -255,9 +253,9 @@ pub const Tester = struct {
         }
 
         const time = localValues[@intFromEnum(Metrics.time)];
-        // const timeInSecs = self.timeAsSeconds(time);
-        std.io.Writer.printDuration(&self.reportBuffer.writer, time, .{}) catch unreachable;
-        debug.print("{s}: {} ({s})", .{ label, time, self.reportBuffer.toOwnedSlice() catch unreachable });
+        var w: std.io.Writer = .fixed(&self.labelTimeBuffer);
+        w.printDuration(time, .{}) catch unreachable;
+        debug.print("{s}: {} ({s})", .{ label, time, w.buffered() });
 
         const bytes = localValues[@intFromEnum(Metrics.byteCount)];
         if (bytes > 0) {
@@ -318,7 +316,7 @@ pub fn main() !void {
 
     var ts = ReptitionTestSeries(10, 10).new();
     ts.setRowLabel("hello world"[0..]);
-    std.debug.print(">>> {any} \n", .{ts});
+    // std.debug.print(">>> {any} \n", .{ts});
 
     var t = Tester.new();
     while (true) {
@@ -326,7 +324,7 @@ pub fn main() !void {
 
         while (t.isTesting()) {
             t.beginTime();
-            try run(1024, 1024);
+            try run(4096, 128);
             t.endTime();
             t.countBytes(0);
         }
