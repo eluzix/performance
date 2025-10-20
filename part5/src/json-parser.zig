@@ -132,7 +132,7 @@ pub fn setupHaversine(allocator: mem.Allocator, inputFilename: []u8) !HaversineS
                     // innerSpan = try pr.startSpan("updateField");
                     try point.updateField(k, v);
                     // pr.stopSpan(innerSpan, 0);
-                    try points.append(point);
+                    try points.append(allocator, point);
 
                     parser.keyLen = 0;
                     parser.valLen = 0;
@@ -202,7 +202,7 @@ pub fn setupHaversine(allocator: mem.Allocator, inputFilename: []u8) !HaversineS
         const rb = try binFile.read(totalBuf);
         assert(rb == 8);
         const binValue: f64 = bytesToFloat(totalBuf);
-        try answers.append(binValue);
+        try answers.append(allocator, binValue);
     }
 
     _ = try binFile.read(totalBuf);
@@ -211,11 +211,11 @@ pub fn setupHaversine(allocator: mem.Allocator, inputFilename: []u8) !HaversineS
     // pr.endProfile();
     // _ = try pr.report();
     return HaversineSetup{
-        .points = try points.toOwnedSlice(),
+        .points = try points.toOwnedSlice(allocator),
         .valid = true,
         .answersSum = binValue,
         .pointsCount = pointsCount,
         .totalBytes = totalBytes,
-        .answers = try answers.toOwnedSlice(),
+        .answers = try answers.toOwnedSlice(allocator),
     };
 }

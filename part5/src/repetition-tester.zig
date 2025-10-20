@@ -105,6 +105,7 @@ pub fn ReptitionTestSeries(comptime maxRows: usize, comptime columnCount: usize)
 }
 
 pub const Tester = struct {
+    allocator: std.mem.Allocator,
     state: State,
     startTime: u64,
     timeToWait: u64,
@@ -117,10 +118,12 @@ pub const Tester = struct {
     testMetrics: [@intFromEnum(Metrics.count)]u64,
 
     results: Results,
+    reportBuffer: std.io.Writer.Allocating,
 
-    pub fn new() Tester {
+    pub fn new(allocator: std.mem.Allocator) Tester {
         const size = @intFromEnum(Metrics.count);
         return Tester{
+            .allocator = allocator,
             .state = State.unitialized,
             .startTime = 0,
             .timeToWait = 0,
@@ -134,6 +137,7 @@ pub const Tester = struct {
                 .min = [_]u64{0} ** size,
                 .max = [_]u64{0} ** size,
             },
+            .reportBuffer = std.io.Writer.Allocating.initCapacity(allocator, 128) catch unreachable,
         };
     }
 
@@ -251,8 +255,9 @@ pub const Tester = struct {
         }
 
         const time = localValues[@intFromEnum(Metrics.time)];
-        const timeInSecs = self.timeAsSeconds(time);
-        debug.print("{s}: {} ({s})", .{ label, time, std.fmt.fmtDuration(timeInSecs) });
+        // const timeInSecs = self.timeAsSeconds(time);
+        std.io.Writer.printDuration(&self.reportBuffer.writer, time, .{}) catch unreachable;
+        debug.print("{s}: {} ({s})", .{ label, time, self.reportBuffer.toOwnedSlice() catch unreachable });
 
         const bytes = localValues[@intFromEnum(Metrics.byteCount)];
         if (bytes > 0) {
