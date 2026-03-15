@@ -9,20 +9,57 @@ const State = enum {
     err,
 };
 
-const Metrics = enum {
+pub const Metrics = enum {
     testCount,
     time,
     pageFaults,
     byteCount,
+    gbPerSec,
+    kbPerPgFault,
 
     count,
 };
 
-pub const Results = struct {
-    totals: [@intFromEnum(Metrics.count)]u64,
-    min: [@intFromEnum(Metrics.count)]u64,
-    max: [@intFromEnum(Metrics.count)]u64,
+pub const ResultValue = struct {
+    values: [@intFromEnum(Metrics.count)]u64,
+    perCount: [@intFromEnum(Metrics.count)]f64,
 };
+
+pub const Results = struct {
+    totals: ResultValue,
+    min: ResultValue,
+    max: ResultValue,
+};
+
+fn timeAsSeconds(time: f64) f64 {
+    return time / @as(f64, @floatFromInt(std.time.ns_per_s));
+}
+
+fn timeFromSecs(seconds: u64) u64 {
+    return seconds * std.time.ns_per_s;
+}
+
+fn computeDerivedValues(value: *ResultValue) void {
+    const testCount: f64 = @floatFromInt(value.values[@intFromEnum(Metrics.testCount)]);
+
+    for (0..@intFromEnum(Metrics.count)) |i| {
+        value.perCount[i] = @as(f64, @floatFromInt(value.values[i])) / testCount;
+    }
+
+    const time = timeAsSeconds(value.perCount[@intFromEnum(Metrics.time)]);
+    const bytes = value.perCount[@intFromEnum(Metrics.byteCount)];
+
+    if (bytes > 0) {
+        const GB: f64 = 1024.0 * 1024.0 * 1024.0;
+        const gbProcessed = bytes / (GB * time);
+        value.perCount[@intFromEnum(Metrics.gbPerSec)] = gbProcessed;
+    }
+
+    const pageFaults = value.perCount[@intFromEnum(Metrics.pageFaults)];
+    if (pageFaults > 0) {
+        value.perCount[@intFromEnum(Metrics.kbPerPgFault)] = bytes / pageFaults * 1024;
+    }
+}
 
 const MAX_LABEL_SIZE = 64;
 
@@ -33,6 +70,7 @@ pub fn ReptitionTestSeries(comptime maxRows: usize, comptime columnCount: usize)
         columnCount: usize,
         rowIndex: usize,
         columnIndex: usize,
+        currentRun: usize,
         rowLabels: [maxRows][MAX_LABEL_SIZE]u8, // Changed to array
         columnsLabel: [columnCount][MAX_LABEL_SIZE]u8, // Changed to array
 
@@ -47,10 +85,20 @@ pub fn ReptitionTestSeries(comptime maxRows: usize, comptime columnCount: usize)
                 .columnCount = columnCount,
                 .rowIndex = 0,
                 .columnIndex = 0,
+                .currentRun = 0,
                 .results = [_]Results{Results{
-                    .totals = [_]u64{0} ** size,
-                    .min = [_]u64{0} ** size,
-                    .max = [_]u64{0} ** size,
+                    .totals = ResultValue{
+                        .values = [_]u64{0} ** size,
+                        .perCount = [_]f64{0} ** size,
+                    },
+                    .min = ResultValue{
+                        .values = [_]u64{0} ** size,
+                        .perCount = [_]f64{0} ** size,
+                    },
+                    .max = ResultValue{
+                        .values = [_]u64{0} ** size,
+                        .perCount = [_]f64{0} ** size,
+                    },
                 }} ** maxResultsSize,
                 .rowLabels = [_][MAX_LABEL_SIZE]u8{[_]u8{0} ** MAX_LABEL_SIZE} ** maxRows,
                 .columnsLabel = [_][MAX_LABEL_SIZE]u8{[_]u8{0} ** MAX_LABEL_SIZE} ** columnCount,
@@ -71,11 +119,12 @@ pub fn ReptitionTestSeries(comptime maxRows: usize, comptime columnCount: usize)
 
         pub fn setColumnLabel(self: *Self, label: []const u8) void {
             if (self.isInbound()) {
-                self.columnsLabel[self.columnIndex] = [_]u8{0} ** 64;
-                const copyLen = @min(label.len, 64);
+                self.columnsLabel[self.columnIndex] = [_]u8{0} ** MAX_LABEL_SIZE;
+                const copyLen = @min(label.len, MAX_LABEL_SIZE);
                 @memcpy(self.columnsLabel[self.columnIndex][0..copyLen], label[0..copyLen]);
             }
         }
+
         pub fn newTestWave(self: *Self, t: *Tester, secondsToTry: u64, expectedBytes: u64) void {
             if (self.isInbound()) {
                 const c = self.columnsLabel[self.columnIndex];
@@ -83,6 +132,8 @@ pub fn ReptitionTestSeries(comptime maxRows: usize, comptime columnCount: usize)
                 const r = self.rowLabels[self.rowIndex];
                 const rl = std.mem.indexOfScalar(u8, &r, 0).?;
                 std.debug.print("\n--- {s} {s} ---\n", .{ c[0..cl], r[0..rl] });
+
+                self.currentRun += 1;
             }
             t.startNewWave(secondsToTry, expectedBytes);
         }
@@ -92,14 +143,34 @@ pub fn ReptitionTestSeries(comptime maxRows: usize, comptime columnCount: usize)
                 if (self.isInbound()) {
                     // todo get results...
                     self.results[self.rowIndex * self.columnCount + self.columnIndex] = t.results;
+                    // debug.print("=>=>=>=> rowIndex: {d}, columnCount: {d}, columnIndex: {d}, LOC: {d}\n", .{ self.rowIndex, self.columnCount, self.columnIndex, self.rowIndex * self.columnCount + self.columnIndex });
+
+                    self.columnIndex += 1;
                     if (self.columnIndex >= self.columnCount) {
-                        self.columnCount = 0;
+                        self.columnIndex = 0;
                         self.rowIndex += 1;
                     }
                 }
             }
 
             return res;
+        }
+        pub fn dumpCSV(self: *Self, metric: Metrics) void {
+            for (0..self.columnCount) |c| {
+                const r = self.columnsLabel[c];
+                const rl = std.mem.indexOfScalar(u8, &r, 0).?;
+                debug.print("{s},", .{r[0..rl]});
+            }
+            debug.print("\n", .{});
+
+            for (0..self.rowIndex + 1) |i| {
+                for (0..self.columnCount) |c| {
+                    // debug.print("->->->-> rowIndex: {d}, columnCount: {d}, columnIndex: {d}, LOC: {d}\n", .{ i, self.columnCount, c, i * self.columnCount + c });
+                    const r = self.results[i * self.columnCount + c];
+                    debug.print("{d},", .{r.min.perCount[@intFromEnum(metric)]});
+                }
+                debug.print("\n", .{});
+            }
         }
     };
 }
@@ -132,9 +203,18 @@ pub const Tester = struct {
             .testMetrics = [_]u64{0} ** size,
             .labelTimeBuffer = [_]u8{0} ** 64,
             .results = Results{
-                .totals = [_]u64{0} ** size,
-                .min = [_]u64{0} ** size,
-                .max = [_]u64{0} ** size,
+                .totals = ResultValue{
+                    .values = [_]u64{0} ** size,
+                    .perCount = [_]f64{0} ** size,
+                },
+                .min = ResultValue{
+                    .values = [_]u64{0} ** size,
+                    .perCount = [_]f64{0} ** size,
+                },
+                .max = ResultValue{
+                    .values = [_]u64{0} ** size,
+                    .perCount = [_]f64{0} ** size,
+                },
             },
         };
     }
@@ -149,9 +229,18 @@ pub const Tester = struct {
                 self.closeBlockCount = 0;
                 self.expectedBytes = expectedBytes;
                 self.results = Results{
-                    .totals = [_]u64{0} ** @intFromEnum(Metrics.count),
-                    .min = [_]u64{0} ** @intFromEnum(Metrics.count),
-                    .max = [_]u64{0} ** @intFromEnum(Metrics.count),
+                    .totals = ResultValue{
+                        .values = [_]u64{0} ** @intFromEnum(Metrics.count),
+                        .perCount = [_]f64{0} ** @intFromEnum(Metrics.count),
+                    },
+                    .min = ResultValue{
+                        .values = [_]u64{0} ** @intFromEnum(Metrics.count),
+                        .perCount = [_]f64{0} ** @intFromEnum(Metrics.count),
+                    },
+                    .max = ResultValue{
+                        .values = [_]u64{0} ** @intFromEnum(Metrics.count),
+                        .perCount = [_]f64{0} ** @intFromEnum(Metrics.count),
+                    },
                 };
 
                 const faults: u64 = @intCast(perf.getPageFaults());
@@ -159,14 +248,13 @@ pub const Tester = struct {
             },
             State.completed => {
                 self.state = State.testing;
-                // self.testMetrics = [_]u64{0} ** @intFromEnum(Metrics.count);
             },
             State.testing => unreachable,
             State.err => unreachable,
         }
 
         self.startTime = perf.highResolutionClock();
-        self.timeToWait = self.timeFromSecs(secondsToTry);
+        self.timeToWait = timeFromSecs(secondsToTry);
     }
 
     pub fn setError(self: *Tester, msg: []const u8) void {
@@ -206,19 +294,19 @@ pub const Tester = struct {
                 }
 
                 if (self.state == State.testing) {
-                    self.testMetrics[@intFromEnum(Metrics.testCount)] += 1;
+                    self.testMetrics[@intFromEnum(Metrics.testCount)] = 1;
 
                     for (0..@intFromEnum(Metrics.count)) |i| {
-                        self.results.totals[i] += self.testMetrics[i];
+                        self.results.totals.values[i] += self.testMetrics[i];
                     }
 
-                    if (self.results.max[@intFromEnum(Metrics.time)] < self.testMetrics[@intFromEnum(Metrics.time)]) {
-                        self.results.max = self.testMetrics;
+                    if (self.results.max.values[@intFromEnum(Metrics.time)] < self.testMetrics[@intFromEnum(Metrics.time)]) {
+                        self.results.max.values = self.testMetrics;
                     }
 
-                    const rmin = self.results.min[@intFromEnum(Metrics.time)];
+                    const rmin = self.results.min.values[@intFromEnum(Metrics.time)];
                     if (rmin == 0 or rmin > self.testMetrics[@intFromEnum(Metrics.time)]) {
-                        self.results.min = self.testMetrics;
+                        self.results.min.values = self.testMetrics;
                         self.startTime = currentTime;
                         self.printTime("Min", self.results.min, true);
                     }
@@ -226,6 +314,9 @@ pub const Tester = struct {
 
                 if (currentTime - self.startTime > self.timeToWait) {
                     self.state = State.completed;
+                    computeDerivedValues(&self.results.totals);
+                    computeDerivedValues(&self.results.min);
+                    computeDerivedValues(&self.results.max);
                     self.printAllResults();
                 }
             }
@@ -235,40 +326,21 @@ pub const Tester = struct {
 
         return false;
     }
-    fn timeFromSecs(self: *Tester, seconds: u64) u64 {
-        return seconds * 10_000_000 * (self.timeBaseInfo.numer / self.timeBaseInfo.denom);
-    }
 
-    fn timeAsSeconds(self: *Tester, time: u64) u64 {
-        return (time * self.timeBaseInfo.numer / self.timeBaseInfo.denom) / 1000;
-        // return (time * self.timeBaseInfo.numer / self.timeBaseInfo.denom);
-    }
-
-    fn printTime(self: *Tester, label: []const u8, value: [@intFromEnum(Metrics.count)]u64, carridgeReturn: bool) void {
-        const testCount = value[@intFromEnum(Metrics.testCount)];
-        var localValues: [@intFromEnum(Metrics.count)]u64 = [_]u64{0} ** @intFromEnum(Metrics.count);
-
-        for (0..@intFromEnum(Metrics.count)) |i| {
-            localValues[i] = value[i] / testCount;
-        }
-
-        const time = localValues[@intFromEnum(Metrics.time)];
+    fn printTime(self: *Tester, label: []const u8, value: ResultValue, carridgeReturn: bool) void {
+        const time = value.values[@intFromEnum(Metrics.time)];
         var w: std.io.Writer = .fixed(&self.labelTimeBuffer);
         w.printDuration(time, .{}) catch unreachable;
         debug.print("{s}: {} ({s})", .{ label, time, w.buffered() });
 
-        const bytes = localValues[@intFromEnum(Metrics.byteCount)];
+        const bytes = value.perCount[@intFromEnum(Metrics.byteCount)];
         if (bytes > 0) {
-            const fb: f64 = @floatFromInt(bytes);
-            const gbProcessed = fb / (1024.0 * 1024.0 * 1024.0);
-            const fpt: f64 = @floatFromInt(time);
-            const bandwidth = gbProcessed / (fpt / 1000 / 1000 / 1000);
-            debug.print(" ({d:.10} GB/s)", .{bandwidth});
+            debug.print(" ({d:.10} GB/s)", .{value.perCount[@intFromEnum(Metrics.gbPerSec)]});
         }
 
-        const pageFaults = localValues[@intFromEnum(Metrics.pageFaults)];
+        const pageFaults = value.perCount[@intFromEnum(Metrics.pageFaults)];
         if (pageFaults > 0) {
-            debug.print(" (PF: {d:.4}, {d:.4}k/faults)", .{ pageFaults, bytes / pageFaults * 1024 });
+            debug.print(" (PF: {d:.4}, {d:.4}k/faults)", .{ pageFaults, value.perCount[@intFromEnum(Metrics.kbPerPgFault)] });
         }
 
         if (carridgeReturn) {
@@ -286,9 +358,6 @@ pub const Tester = struct {
 };
 
 fn run(pageSize: usize, pageCount: usize) !void {
-    // const pageSize = 4096 * 4;
-    // const pageSize = 1024;
-    // const pageCount = 128;
     const totalSize = pageSize * pageCount;
 
     const prot = std.posix.PROT.READ | std.posix.PROT.WRITE;
@@ -314,21 +383,29 @@ pub fn main() !void {
     // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
     // _ = gpa.allocator();
 
-    var ts = ReptitionTestSeries(10, 10).new();
-    ts.setRowLabel("hello world"[0..]);
+    var ts = ReptitionTestSeries(5, 2).new();
+    ts.setRowLabel("row"[0..]);
     // std.debug.print(">>> {any} \n", .{ts});
 
-    var t = Tester.new();
-    while (true) {
-        t.startNewWave(5, 0);
+    for (0..2) |i| {
+        var buf: [64]u8 = [_]u8{0} ** 64;
+        _ = try std.fmt.bufPrint(&buf, "column {d}", .{i});
+        ts.setColumnLabel(buf[0..]);
 
-        while (t.isTesting()) {
+        var t = Tester.new();
+        // while (true) {
+        // t.startNewWave(5, 10);
+        ts.newTestWave(&t, 5, 10 * 1024 * 1024);
+
+        while (ts.isTesting(&t)) {
             t.beginTime();
             try run(4096, 128);
             t.endTime();
-            t.countBytes(0);
+            t.countBytes(10 * 1024 * 1024);
         }
     }
+    ts.dumpCSV(Metrics.gbPerSec);
+    // }
     // t.startNewWave(2, 10000);
     // t.beginTime();
     // debug.print("hello world >>> {any}\n", .{t});

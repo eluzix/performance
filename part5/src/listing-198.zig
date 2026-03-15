@@ -68,7 +68,7 @@ fn internetWay2(repCount: usize) void {
 fn ourWay(repCount: usize) void {
     for (0..repCount) |_| {
         var v: f64 = 0.5;
-        _ = asm volatile (""
+        _ = asm volatile ("eor v3.8b, v3.8b, v3.8b"
             : [ret] "={d3}" (v),
         );
         const res = asineCore(v);
