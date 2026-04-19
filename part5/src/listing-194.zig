@@ -124,11 +124,11 @@ fn checkHaversineSimplified(setup: *parser.HaversineSetup) error{}!void {
     setup.valid = true;
 }
 
-pub fn runHaversine(baseAllocator: mem.Allocator, inputFilename: []u8) !void {
+pub fn runHaversine(baseAllocator: mem.Allocator, io: std.Io, inputFilename: []const u8) !void {
     var arena = std.heap.ArenaAllocator.init(baseAllocator);
     defer arena.deinit();
     const allocator = arena.allocator();
-    var setup = try parser.setupHaversine(allocator, inputFilename);
+    var setup = try parser.setupHaversine(allocator, io, inputFilename);
 
     const functions = [_]HaversineChecker{
         HaversineChecker{
@@ -167,10 +167,15 @@ pub fn runHaversine(baseAllocator: mem.Allocator, inputFilename: []u8) !void {
     // std.debug.print("?>>>>>>> {any}\n", .{testSeries.results});
 }
 
-pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa = init.gpa;
+    const io = init.io;
 
-    const args = try std.process.argsAlloc(allocator);
-    try runHaversine(allocator, args[1]);
+    const args = try init.minimal.args.toSlice(init.arena.allocator());
+
+    // var gpa = std.heap.DebugAllocator(.{}){};
+    // const allocator = gpa.allocator();
+
+    // const args = try std.process.argsAlloc(allocator);
+    try runHaversine(gpa, io, args[1]);
 }

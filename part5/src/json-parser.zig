@@ -58,24 +58,24 @@ fn bytesToFloat(bytes: []u8) f64 {
 // pub const HaversineSetup = struct { pointsCount: u64, points: std.ArrayList(Point), answers: std.ArrayList(f64), answersSum: f64, valid: bool };
 pub const HaversineSetup = struct { pointsCount: u64, points: []Point, answers: []f64, answersSum: f64, valid: bool, totalBytes: u64 };
 
-pub fn setupHaversine(allocator: mem.Allocator, inputFilename: []u8) !HaversineSetup {
+pub fn setupHaversine(allocator: mem.Allocator, io: std.Io, inputFilename: []const u8) !HaversineSetup {
     // var pr = try profiler.Profiler.new(allocator);
     // pr.startProfile();
 
     // var span = try pr.startSpan("init");
     const readBufferSize: usize = 1024 * 1024 * 16;
-    const readBuffer: []u8 = try allocator.alloc(u8, readBufferSize);
-    defer allocator.free(readBuffer);
+    var readBuffer: [readBufferSize]u8 = undefined;
+    // defer allocator.free(readBuffer);
 
     const fileName = try std.fmt.allocPrint(allocator, "{s}.json", .{inputFilename});
 
-    const cwd = std.fs.cwd();
-    const file = try cwd.openFile(fileName, .{});
-    defer file.close();
+    const cwd = std.Io.Dir.cwd();
+    const file = try cwd.openFile(io, fileName, .{});
+    defer file.close(io);
 
     var arrayFound = false;
     var totalBytes: u64 = 0;
-    var readCount: u64 = 0;
+    // var readCount: u64 = 0;
 
     const parser = struct {
         var state: ParseState = ParseState.reading;
@@ -98,17 +98,19 @@ pub fn setupHaversine(allocator: mem.Allocator, inputFilename: []u8) !HaversineS
     // pr.stopSpan(span, readBufferSize);
 
     // var innerSpan: usize = undefined;
+    var reader = file.reader(io, &readBuffer);
     while (true) {
         // span = try pr.startSpan("read");
-        readCount = try file.read(readBuffer);
-        if (readCount == 0) {
-            // pr.stopSpan(span, 0);
-            break;
-        }
+        // readCount = try reader.interface.readAlloc(allocator, readBuffer.len);
+        const readData = try reader.interface.readAlloc(allocator, readBuffer.len);
+        // if (readCount == 0) {
+        //     // pr.stopSpan(span, 0);
+        //     break;
+        // }
         // pr.stopSpan(span, readCount);
 
         // span = try pr.startSpan("parse");
-        for (0..readCount) |i| {
+        for (readData) |i| {
             const chr = readBuffer[i];
 
             if (!arrayFound) {
@@ -180,7 +182,8 @@ pub fn setupHaversine(allocator: mem.Allocator, inputFilename: []u8) !HaversineS
             }
         }
 
-        totalBytes += readCount;
+        // totalBytes += readCount;
+        totalBytes += readData.len;
         // pr.stopSpan(span, readCount);
     }
     _ = points.pop();

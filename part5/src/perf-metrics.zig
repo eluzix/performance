@@ -12,9 +12,9 @@ pub fn timeBaseInfo() TBInfo {
     };
 }
 
-pub fn highResolutionClock() u64 {
+pub fn highResolutionClock(info: TBInfo) u64 {
     const now = std.c.mach_absolute_time();
-    const info = timeBaseInfo();
+    // const info = timeBaseInfo();
     return (now * info.numer) / info.denom;
 }
 

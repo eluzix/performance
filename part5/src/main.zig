@@ -4,11 +4,15 @@ const parser = @import("json-parser.zig");
 // const runner = @import("run-haversine.zig");
 const perf = @import("perf-metrics.zig");
 
-pub fn main() !void {
-    var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    const allocator = gpa.allocator();
+pub fn main(init: std.process.Init) !void {
+    const gpa = init.gpa;
+    const io = init.io;
 
-    const args = try std.process.argsAlloc(allocator);
+    const args = try init.minimal.args.toSlice(init.arena.allocator());
+    // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
+    // const allocator = gpa.allocator();
+
+    // const args = try std.process.argsAlloc(allocator);
     if (args.len < 3) {
         std.debug.print("Usage: {s} generate|parse|run <file|listing> [generate:count] [generate:seed]\n", .{args[0]});
         std.process.exit(1);
@@ -25,10 +29,10 @@ pub fn main() !void {
         if (args.len > 4) {
             seed = try std.fmt.parseInt(u64, args[4], 10);
         } else {
-            try std.posix.getrandom(std.mem.asBytes(&seed));
+            // try std.posix.getrandom(std.mem.asBytes(&seed));
         }
 
-        try generator.generateJson(allocator, count, seed, args[2]);
+        try generator.generateJson(gpa, io, count, seed, args[2]);
         // } else if (std.mem.eql(u8, args[1], "parse")) {
         //     try parser.parseJson(allocator, args[2], true);
         // std.debug.print(">>> {d} ---- {d}\n", .{ perf.highResolutionClock(), perf.highResolutionClock() });

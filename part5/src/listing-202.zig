@@ -54,7 +54,11 @@ fn fmaDepChainMy(chainCount: u32, chainLength: u32) void {
     }
 }
 
-pub fn main() !void {
+pub fn main(_: std.process.Init) !void {
+    // const gpa = init.gpa;
+    // const io = init.io;
+
+    // const args = try init.minimal.args.toSlice(init.arena.allocator());
     fmaDepChain(2, 8);
 
     var testSeries = repetitionTester.ReptitionTestSeries(1024, 2).new();

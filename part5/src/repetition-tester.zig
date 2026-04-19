@@ -224,7 +224,7 @@ pub const Tester = struct {
         switch (self.state) {
             State.unitialized => {
                 self.state = State.testing;
-                self.startTime = perf.highResolutionClock();
+                self.startTime = perf.highResolutionClock(self.timeBaseInfo);
                 self.openBlocksCount = 0;
                 self.closeBlockCount = 0;
                 self.expectedBytes = expectedBytes;
@@ -253,7 +253,7 @@ pub const Tester = struct {
             State.err => unreachable,
         }
 
-        self.startTime = perf.highResolutionClock();
+        self.startTime = perf.highResolutionClock(self.timeBaseInfo);
         self.timeToWait = timeFromSecs(secondsToTry);
     }
 
@@ -264,14 +264,14 @@ pub const Tester = struct {
 
     pub fn beginTime(self: *Tester) void {
         self.openBlocksCount += 1;
-        self.testMetrics[@intFromEnum(Metrics.time)] = perf.highResolutionClock();
+        self.testMetrics[@intFromEnum(Metrics.time)] = perf.highResolutionClock(self.timeBaseInfo);
         self.testMetrics[@intFromEnum(Metrics.pageFaults)] = @intCast(perf.getPageFaults());
         self.testMetrics[@intFromEnum(Metrics.byteCount)] = 0;
     }
 
     pub fn endTime(self: *Tester) void {
         self.closeBlockCount += 1;
-        self.testMetrics[@intFromEnum(Metrics.time)] = perf.highResolutionClock() - self.testMetrics[@intFromEnum(Metrics.time)];
+        self.testMetrics[@intFromEnum(Metrics.time)] = perf.highResolutionClock(self.timeBaseInfo) - self.testMetrics[@intFromEnum(Metrics.time)];
         const faults: u64 = @intCast(perf.getPageFaults());
         self.testMetrics[@intFromEnum(Metrics.pageFaults)] = faults - self.testMetrics[@intFromEnum(Metrics.pageFaults)];
     }
@@ -282,7 +282,7 @@ pub const Tester = struct {
 
     pub fn isTesting(self: *Tester) bool {
         if (self.state == State.testing) {
-            const currentTime = perf.highResolutionClock();
+            const currentTime = perf.highResolutionClock(self.timeBaseInfo);
             if (self.openBlocksCount > 0) {
                 if (self.openBlocksCount != self.closeBlockCount) {
                     self.setError("Open and close blocks count doesn't match\n");
@@ -329,8 +329,10 @@ pub const Tester = struct {
 
     fn printTime(self: *Tester, label: []const u8, value: ResultValue, carridgeReturn: bool) void {
         const time = value.values[@intFromEnum(Metrics.time)];
-        var w: std.io.Writer = .fixed(&self.labelTimeBuffer);
-        w.printDuration(time, .{}) catch unreachable;
+        var w: std.Io.Writer = .fixed(&self.labelTimeBuffer);
+        std.Io.Duration.fromNanoseconds(time).format(&w) catch unreachable;
+        // w.print("{D}", .{std.Io.Duration.fromNanoseconds(time)}) catch unreachable;
+        // w.printDuration(time, .{}) catch unreachable;
         debug.print("{s}: {} ({s})", .{ label, time, w.buffered() });
 
         const bytes = value.perCount[@intFromEnum(Metrics.byteCount)];

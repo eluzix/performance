@@ -111,9 +111,9 @@ fn fuckedupWay(repCount: usize) void {
     }
 }
 
-pub fn main() !void {
-    // var gpa = std.heap.GeneralPurposeAllocator(.{}){};
-    // const allocator = gpa.allocator();
+pub fn main(_: std.process.Init) !void {
+    // var     // const gpa = init.gpa;
+    // const io = init.io;
 
     const repCount = 1000000;
     const testFunctions = [_]TestFunction{
